@@ -7,18 +7,20 @@ const emit = defineEmits<{
 
 const input = ref('')
 const touched = ref(false)
+const inputEl = ref<HTMLInputElement | null>(null)
 
-// 닉네임 규칙: 2~12자, 한글/영문/숫자만 허용, 공백 불가
-const nicknameRegex = /^[가-힣a-zA-Z0-9]{2,12}$/
+// 닉네임 규칙: 3~12자, 한글(자모 포함)/영문/숫자만 허용, 공백 불가
+const nicknameRegex = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9]{3,12}$/
+const charRegex = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9]+$/
 
 const isValid = computed(() => nicknameRegex.test(input.value))
 
 const errorMessage = computed(() => {
   if (!touched.value || input.value.length === 0) return ''
-  if (input.value.length < 2) return '최소 2자 이상 입력해주세요.'
-  if (input.value.length > 12) return '최대 12자까지 가능합니다.'
   if (/\s/.test(input.value)) return '공백은 사용할 수 없습니다.'
-  if (!nicknameRegex.test(input.value)) return '한글, 영문, 숫자만 사용 가능합니다.'
+  if (!charRegex.test(input.value)) return '한글, 영문, 숫자만 사용 가능합니다.'
+  if (input.value.length < 3) return '최소 3자 이상 입력해주세요.'
+  if (input.value.length > 12) return '최대 12자까지 가능합니다.'
   return ''
 })
 
@@ -29,7 +31,11 @@ function handleSubmit() {
   }
 }
 
-function handleInput() {
+// v-model 대신 DOM에서 직접 읽어 한글 IME 조합 중에도 실시간 반영
+function syncInput() {
+  if (inputEl.value) {
+    input.value = inputEl.value.value
+  }
   touched.value = true
 }
 </script>
@@ -50,12 +56,15 @@ function handleInput() {
         <div class="input-group">
           <label class="input-label">닉네임</label>
           <input
-            v-model="input"
+            ref="inputEl"
             type="text"
             class="nickname-input"
-            placeholder="2~12자 한글, 영문, 숫자"
+            placeholder="3~12자 한글, 영문, 숫자"
             maxlength="12"
-            @input="handleInput"
+            :value="input"
+            @input="syncInput"
+            @compositionupdate="syncInput"
+            @compositionend="syncInput"
             @keyup.enter="handleSubmit"
           >
           <div v-if="errorMessage" class="input-error">{{ errorMessage }}</div>
