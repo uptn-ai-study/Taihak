@@ -89,7 +89,7 @@ const themeClass = computed(() => `theme-${difficulty.value}`)
     />
 
     <footer class="app-footer">
-      <p>DIALED COLOR &copy; 2026. Inspired by dialed.gg. Built with Vue 3 + TypeScript.</p>
+      <p>COLOR // SENSE CHALLENGE &copy; 2026.</p>
     </footer>
   </div>
 

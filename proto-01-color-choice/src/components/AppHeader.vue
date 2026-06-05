@@ -8,9 +8,9 @@ defineEmits<{
 <template>
   <header class="app-header">
     <div class="logo" @click="$emit('goHome')" title="홈 화면으로 이동">
-      <span class="logo-accent">DIALED</span>
+      <span class="logo-accent">COLOR</span>
       <span class="logo-separator">//</span>
-      <span class="logo-main">COLOR</span>
+      <span class="logo-main">SENSE CHALLENGE</span>
     </div>
     <div class="header-actions">
       <button class="icon-button" title="통계 보기" @click="$emit('openStats')">
