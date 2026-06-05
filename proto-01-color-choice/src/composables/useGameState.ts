@@ -139,15 +139,15 @@ export function useGameState() {
       tier: tier.value,
     })
 
-    // 일간 랭킹에 점수 제출
+    currentScreen.value = 'results'
+
+    // 일간 랭킹에 점수 제출 (백그라운드)
     submitScore(
       nickname.value,
       difficulty.value,
       grandScore.value,
       tier.value
     )
-
-    currentScreen.value = 'results'
   }
 
   function goToHome() {

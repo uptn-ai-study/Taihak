@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import type { Difficulty, RankingEntry } from '../types/game'
 import { useRanking } from '../composables/useRanking'
 import { useStorage } from '../composables/useStorage'
 
-const { getDailyRanking } = useRanking()
+const { getDailyRanking, loadRanking, isLoading } = useRanking()
 const { nickname } = useStorage()
 
 const selectedDifficulty = ref<Difficulty>('normal')
@@ -20,6 +20,16 @@ const ranking = computed<RankingEntry[]>(() => {
 })
 
 const hasEntries = computed(() => ranking.value.length > 0)
+
+// 탭 변경 시 해당 난이도 랭킹 로드
+watch(selectedDifficulty, (diff) => {
+  loadRanking(diff)
+})
+
+// 최초 로드
+onMounted(() => {
+  loadRanking(selectedDifficulty.value)
+})
 
 // 오늘 날짜 포맷 (표시용)
 const todayFormatted = computed(() => {
@@ -71,7 +81,10 @@ function tierClass(tier: string): string {
 
     <!-- 랭킹 목록 -->
     <div class="ranking-list">
-      <div v-if="!hasEntries" class="ranking-empty">
+      <div v-if="isLoading" class="ranking-empty">
+        랭킹을 불러오는 중...
+      </div>
+      <div v-else-if="!hasEntries" class="ranking-empty">
         아직 오늘의 기록이 없습니다.<br>
         첫 번째 도전자가 되어보세요!
       </div>
