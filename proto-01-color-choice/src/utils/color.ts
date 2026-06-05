@@ -151,11 +151,11 @@ export function ciede2000(lab1: LabColor, lab2: LabColor): number {
 }
 
 /**
- * CIEDE2000 색차 → 점수 (0.00 ~ 10.00) 변환
+ * CIEDE2000 색차 → 점수 (0.00 ~ 5.00) 변환
  */
 export function calculateMatchScore(deltaE: number): number {
-  const rawScore = 10 * Math.exp(-0.065 * deltaE)
-  return parseFloat(Math.max(0, Math.min(10, rawScore)).toFixed(2))
+  const rawScore = 5 * Math.exp(-0.065 * deltaE)
+  return parseFloat(Math.max(0, Math.min(5, rawScore)).toFixed(2))
 }
 
 /**
@@ -178,13 +178,13 @@ export function rgbToCss(rgb: RgbColor): string {
 }
 
 /**
- * 누적 점수 → 등급 변환 (300점 만점 기준)
+ * 누적 점수 → 등급 변환 (100점 만점 기준)
  */
 export function scoreToTier(score: number): 'S' | 'A' | 'B' | 'C' | 'F' {
-  if (score >= 270) return 'S'   // 90%+
-  if (score >= 240) return 'A'   // 80%+
-  if (score >= 200) return 'B'   // 67%+
-  if (score >= 150) return 'C'   // 50%+
+  if (score >= 90) return 'S'   // 90%+
+  if (score >= 80) return 'A'   // 80%+
+  if (score >= 67) return 'B'   // 67%+
+  if (score >= 50) return 'C'   // 50%+
   return 'F'
 }
 

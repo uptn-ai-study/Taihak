@@ -6,9 +6,10 @@ import { useRanking } from './useRanking'
 
 // 게임 설정 상수
 export const TOTAL_ROUNDS = 10
-export const COLORS_PER_ROUND = 3
+export const COLORS_PER_ROUND = 2
 export const REVEAL_TIME = 5000     // 색상당 5초
-export const PASS_THRESHOLD = 15    // 라운드당 통과 기준 (30점 만점 중 15점)
+export const PASS_THRESHOLD = 5     // 라운드당 통과 기준 (10점 만점 중 5점)
+export const ROUND_MAX = 10         // 라운드당 만점 (색상당 5점 × 2)
 
 export function useGameState() {
   const { saveRecord, nickname } = useStorage()
@@ -257,7 +258,7 @@ export function useGameState() {
       ? `${cleared}라운드에서 탈락`
       : `${TOTAL_ROUNDS}라운드 완주!`
 
-    const text = `COLOR // SENSE CHALLENGE\n${status}\n누적 점수: ${total.toFixed(2)} / ${TOTAL_ROUNDS * 30}.00\n${emojiBlock}\n\n당신의 색상 감각을 테스트해 보세요!`
+    const text = `COLOR // SENSE CHALLENGE\n${status}\n누적 점수: ${total.toFixed(2)} / ${TOTAL_ROUNDS * ROUND_MAX}.00\n${emojiBlock}\n\n당신의 색상 감각을 테스트해 보세요!`
 
     navigator.clipboard.writeText(text).then(() => {
       showToast('공유용 결과가 클립보드에 복사되었습니다!')

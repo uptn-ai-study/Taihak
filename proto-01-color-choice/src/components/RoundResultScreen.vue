@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { GameColor, ColorScore } from '../types/game'
 import { rgbToCss } from '../utils/color'
-import { PASS_THRESHOLD, TOTAL_ROUNDS } from '../composables/useGameState'
+import { PASS_THRESHOLD, TOTAL_ROUNDS, ROUND_MAX } from '../composables/useGameState'
 
 const props = defineProps<{
   currentRound: number
@@ -34,7 +34,7 @@ function buttonText(): string {
         <div class="banner-text">
           <span class="banner-title">라운드 {{ currentRound + 1 }} {{ passed ? '통과!' : '탈락' }}</span>
           <span class="banner-score">
-            {{ roundScore.toFixed(2) }} / 30.00
+            {{ roundScore.toFixed(2) }} / {{ ROUND_MAX }}.00
             <span class="banner-threshold">(기준: {{ PASS_THRESHOLD }}점)</span>
           </span>
         </div>
@@ -49,7 +49,7 @@ function buttonText(): string {
             <span class="cc-arrow">→</span>
             <div class="cc-tile" :style="{ backgroundColor: rgbToCss(roundGuesses[idx].rgb) }" />
           </div>
-          <span class="cc-score" :class="score.score >= 5 ? 'score-good' : 'score-bad'">
+          <span class="cc-score" :class="score.score >= 2.5 ? 'score-good' : 'score-bad'">
             {{ score.score.toFixed(2) }}
           </span>
         </div>

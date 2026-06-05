@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TOTAL_ROUNDS, COLORS_PER_ROUND, PASS_THRESHOLD } from '../composables/useGameState'
+import { TOTAL_ROUNDS, COLORS_PER_ROUND, PASS_THRESHOLD, ROUND_MAX } from '../composables/useGameState'
 import { useStorage } from '../composables/useStorage'
 import DailyRanking from './DailyRanking.vue'
 
@@ -31,7 +31,7 @@ const { recentRecords } = useStorage()
           </div>
           <div class="rule-item">
             <span class="rule-icon">✅</span>
-            <span class="rule-text">라운드 {{ PASS_THRESHOLD }}점 이상 → 다음 라운드 진행</span>
+            <span class="rule-text">라운드 {{ PASS_THRESHOLD }}점 이상 → 다음 라운드 진행 (만점 {{ ROUND_MAX }}점)</span>
           </div>
           <div class="rule-item">
             <span class="rule-icon">❌</span>
@@ -39,7 +39,7 @@ const { recentRecords } = useStorage()
           </div>
           <div class="rule-item">
             <span class="rule-icon">🏆</span>
-            <span class="rule-text">{{ TOTAL_ROUNDS }}라운드 완주 시 최대 {{ TOTAL_ROUNDS * 30 }}점</span>
+            <span class="rule-text">{{ TOTAL_ROUNDS }}라운드 완주 시 최대 {{ TOTAL_ROUNDS * ROUND_MAX }}점</span>
           </div>
         </div>
       </div>

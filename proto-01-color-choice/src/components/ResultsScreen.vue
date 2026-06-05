@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import type { RoundResult } from '../types/game'
 import { rgbToCss, tierToLabel } from '../utils/color'
-import { TOTAL_ROUNDS } from '../composables/useGameState'
+import { TOTAL_ROUNDS, ROUND_MAX } from '../composables/useGameState'
 
 defineProps<{
   cumulativeScore: number
@@ -47,7 +47,7 @@ function tierClass(tier: string): string {
           {{ eliminated ? '도전 종료' : '완주 성공!' }}
         </h2>
         <div class="grand-score">{{ cumulativeScore.toFixed(2) }}</div>
-        <div class="score-max">/ {{ TOTAL_ROUNDS * 30 }}.00 만점</div>
+        <div class="score-max">/ {{ TOTAL_ROUNDS * ROUND_MAX }}.00 만점</div>
         <div class="rounds-info">
           <span class="rounds-badge" :class="eliminated ? 'badge-eliminated' : 'badge-cleared'">
             {{ eliminated ? `${roundsCleared}라운드 탈락` : `${TOTAL_ROUNDS}라운드 완주` }}
@@ -72,7 +72,7 @@ function tierClass(tier: string): string {
               <span class="round-num">R{{ result.round }}</span>
               <span class="round-status-icon">{{ result.passed ? '✅' : '❌' }}</span>
               <span class="round-score-val" :class="result.passed ? 'score-mid' : 'score-poor'">
-                {{ result.totalScore.toFixed(2) }} / 30.0
+                {{ result.totalScore.toFixed(2) }} / {{ ROUND_MAX }}.0
               </span>
             </div>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
