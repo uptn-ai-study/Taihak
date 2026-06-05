@@ -65,3 +65,30 @@ export interface GameRecord {
   score: number
   tier: Tier
 }
+
+/**
+ * 랭킹 엔트리 (DB 마이그레이션 대비 구조)
+ * - 추후 DB 전환 시 이 인터페이스를 테이블 스키마로 매핑
+ * - id: DB 전환 시 auto-increment PK로 교체
+ * - userId: 추후 회원 체계 연동 시 회원 ID로 교체
+ */
+export interface RankingEntry {
+  id: string              // UUID (DB 전환 시 PK)
+  userId: string          // 현재는 닉네임, 추후 회원 ID
+  nickname: string        // 표시용 닉네임
+  difficulty: Difficulty
+  score: number           // 최종 점수 (30점 만점)
+  tier: Tier
+  date: string            // YYYY-MM-DD (일간 구분 키)
+  timestamp: number       // Unix ms (정렬용)
+}
+
+/**
+ * 랭킹 저장소 파일 구조 (JSON 파일 시스템 시뮬레이션)
+ * - 날짜별 + 난이도별로 파티셔닝
+ * - DB 전환 시: date + difficulty 복합 인덱스로 매핑
+ */
+export interface RankingStore {
+  version: number
+  entries: RankingEntry[]
+}

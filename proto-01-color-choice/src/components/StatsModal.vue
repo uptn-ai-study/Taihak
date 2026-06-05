@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { useStorage } from '../composables/useStorage'
+import { useRanking } from '../composables/useRanking'
 
 defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ close: []; toast: [msg: string]; profileReset: [] }>()
 
 const { nickname, totalGames, bestScore, avgScore, allRecords, clearProfile } = useStorage()
+const { clearUserEntries } = useRanking()
 
 function handleClear() {
   if (confirm('프로필과 모든 도전 기록이 삭제됩니다. 정말로 초기화하시겠습니까?')) {
+    clearUserEntries(nickname.value)
     clearProfile()
     emit('toast', '프로필과 전적 기록이 초기화되었습니다.')
     emit('close')

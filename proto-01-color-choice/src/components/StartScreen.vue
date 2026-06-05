@@ -2,6 +2,7 @@
 import type { Difficulty } from '../types/game'
 import { DIFFICULTY_CONFIGS } from '../composables/useGameState'
 import { useStorage } from '../composables/useStorage'
+import DailyRanking from './DailyRanking.vue'
 
 const props = defineProps<{
   difficulty: Difficulty
@@ -62,6 +63,9 @@ const difficulties = Object.entries(DIFFICULTY_CONFIGS) as [Difficulty, typeof D
           </div>
         </div>
       </div>
+
+      <!-- 일간 랭킹 -->
+      <DailyRanking />
     </div>
   </section>
 </template>

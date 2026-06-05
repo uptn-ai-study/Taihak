@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import type { Difficulty, GameScreen, GameColor, RoundScore, DifficultyConfig } from '../types/game'
 import { generateRandomColor, hsbToRgb, hsbToLab, ciede2000, calculateMatchScore, scoreToTier } from '../utils/color'
 import { useStorage } from './useStorage'
+import { useRanking } from './useRanking'
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
   easy: { label: 'EASY', description: '3라운드 / 색상당 8.00초', revealTime: 8000 },
@@ -12,7 +13,8 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
 const TOTAL_ROUNDS = 3
 
 export function useGameState() {
-  const { saveRecord } = useStorage()
+  const { saveRecord, nickname } = useStorage()
+  const { submitScore } = useRanking()
 
   // 게임 상태
   const currentScreen = ref<GameScreen>('start')
@@ -136,6 +138,14 @@ export function useGameState() {
       score: grandScore.value,
       tier: tier.value,
     })
+
+    // 일간 랭킹에 점수 제출
+    submitScore(
+      nickname.value,
+      difficulty.value,
+      grandScore.value,
+      tier.value
+    )
 
     currentScreen.value = 'results'
   }
