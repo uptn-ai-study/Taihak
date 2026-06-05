@@ -277,4 +277,26 @@ function tierClass(tier: string): string {
   font-weight: bold;
   color: var(--text-main);
 }
+
+/* 반응형 */
+@media (max-width: 480px) {
+  .daily-ranking { padding: 16px; margin-top: 16px; }
+  .ranking-title { font-size: 0.8rem; }
+  .ranking-tab { padding: 6px 0; font-size: 0.65rem; letter-spacing: 1px; }
+  .ranking-row { gap: 8px; padding: 8px 10px; }
+  .rank-nickname { font-size: 0.8rem; }
+  .rank-score { font-size: 0.8rem; }
+  .rank-medal { font-size: 1rem; }
+  .ranking-list { max-height: 280px; }
+}
+
+@media (max-width: 360px) {
+  .daily-ranking { padding: 14px; }
+  .ranking-tab { font-size: 0.6rem; border-radius: 6px; }
+  .ranking-row { gap: 6px; padding: 7px 8px; }
+  .rank-position { width: 24px; }
+  .rank-nickname { font-size: 0.75rem; }
+  .rank-score { font-size: 0.75rem; }
+  .rank-me-badge { font-size: 0.5rem; padding: 1px 4px; }
+}
 </style>

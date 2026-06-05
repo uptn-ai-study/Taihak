@@ -128,4 +128,16 @@ function tierBadgeClass(tier: string): string {
   letter-spacing: 0.5px;
   color: var(--text-main);
 }
+
+@media (max-width: 480px) {
+  .profile-section { padding: 12px; gap: 10px; }
+  .profile-avatar { width: 40px; height: 40px; font-size: 1.1rem; }
+  .profile-name { font-size: 1rem; }
+}
+
+@media (max-width: 360px) {
+  .profile-section { padding: 10px; gap: 8px; }
+  .profile-avatar { width: 36px; height: 36px; font-size: 1rem; }
+  .profile-name { font-size: 0.9rem; }
+}
 </style>

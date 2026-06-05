@@ -170,4 +170,17 @@ button:disabled {
   transform: none !important;
   box-shadow: none !important;
 }
+
+@media (max-width: 480px) {
+  .nickname-container { max-width: 100%; }
+  .nickname-icon { font-size: 2.5rem; margin-bottom: 15px; }
+  .nickname-form { padding: 20px; margin-bottom: 25px; }
+  .nickname-input { font-size: 1rem; padding: 12px 14px; }
+}
+
+@media (max-width: 360px) {
+  .nickname-icon { font-size: 2rem; margin-bottom: 12px; }
+  .nickname-form { padding: 16px; }
+  .nickname-input { font-size: 0.95rem; padding: 11px 12px; }
+}
 </style>
