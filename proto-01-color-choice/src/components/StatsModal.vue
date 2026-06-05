@@ -2,15 +2,16 @@
 import { useStorage } from '../composables/useStorage'
 
 defineProps<{ visible: boolean }>()
-const emit = defineEmits<{ close: []; toast: [msg: string] }>()
+const emit = defineEmits<{ close: []; toast: [msg: string]; profileReset: [] }>()
 
-const { totalGames, bestScore, avgScore, allRecords, clearRecords } = useStorage()
+const { nickname, totalGames, bestScore, avgScore, allRecords, clearProfile } = useStorage()
 
 function handleClear() {
-  if (confirm('정말로 모든 도전 기록을 초기화하시겠습니까? 데이터는 복구할 수 없습니다.')) {
-    clearRecords()
-    emit('toast', '모든 전적 기록이 성공적으로 삭제되었습니다.')
+  if (confirm('프로필과 모든 도전 기록이 삭제됩니다. 정말로 초기화하시겠습니까?')) {
+    clearProfile()
+    emit('toast', '프로필과 전적 기록이 초기화되었습니다.')
     emit('close')
+    emit('profileReset')
   }
 }
 
@@ -29,10 +30,16 @@ function tierBadgeClass(tier: string): string {
   <div class="modal" :class="{ active: visible }" @click.self="$emit('close')">
     <div class="modal-content glass-panel">
       <div class="modal-header">
-        <h3>나의 전적 &amp; 최고 기록</h3>
+        <h3>내 프로필</h3>
         <button class="close-modal" @click="$emit('close')">&times;</button>
       </div>
       <div class="modal-body">
+        <!-- 프로필 영역 -->
+        <div class="profile-section">
+          <div class="profile-avatar">{{ nickname.slice(0, 1) }}</div>
+          <div class="profile-name">{{ nickname }}</div>
+        </div>
+
         <div class="stats-overview">
           <div class="stat-card">
             <span class="stat-val">{{ totalGames }}</span>
@@ -83,9 +90,43 @@ function tierBadgeClass(tier: string): string {
               </tbody>
             </table>
           </div>
-          <button class="btn btn-danger btn-sm" @click="handleClear">통계 데이터 초기화</button>
+          <button class="btn btn-danger btn-sm" @click="handleClear">내 프로필 초기화</button>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.profile-section {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+}
+
+.profile-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: var(--text-dark);
+  font-size: 1.3rem;
+  font-weight: 800;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.profile-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--text-main);
+}
+</style>
