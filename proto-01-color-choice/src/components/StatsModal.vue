@@ -60,8 +60,8 @@ function tierBadgeClass(tier: string): string {
               <thead>
                 <tr>
                   <th>일자</th>
-                  <th>난이도</th>
-                  <th>최종 점수</th>
+                  <th>라운드</th>
+                  <th>점수</th>
                   <th>등급</th>
                 </tr>
               </thead>
@@ -74,8 +74,9 @@ function tierBadgeClass(tier: string): string {
                 <tr v-for="(rec, i) in allRecords" :key="i">
                   <td>{{ rec.date }}</td>
                   <td>
-                    <span style="font-size:0.75rem; font-weight:800; color:var(--color-secondary);">
-                      {{ rec.difficulty }}
+                    <span style="font-size:0.75rem; font-weight:800;"
+                      :style="{ color: rec.eliminated ? 'var(--color-danger)' : 'var(--color-accent)' }">
+                      {{ rec.roundsCleared }}/{{ rec.totalRounds }}R
                     </span>
                   </td>
                   <td>{{ rec.score.toFixed(2) }}</td>

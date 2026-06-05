@@ -71,12 +71,14 @@ body {
   width: 100%;
   max-width: 600px;
   min-height: 90vh;
-  margin: 20px;
+  margin: 0 auto;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   position: relative;
   z-index: 10;
+  box-sizing: border-box;
 }
 
 .app-header {
@@ -647,7 +649,7 @@ body {
 
 /* 13. 반응형 — 태블릿 (768px 이하) */
 @media (max-width: 768px) {
-  .app-container { margin: 15px; }
+  .app-container { padding: 15px; }
   .main-title { font-size: 2rem; }
   .subtitle { font-size: 0.9rem; }
   .timer-countdown-large { font-size: 3.2rem; }
@@ -656,7 +658,7 @@ body {
 
 /* 13. 반응형 — 일반 모바일 (480px 이하) */
 @media (max-width: 480px) {
-  .app-container { margin: 10px; }
+  .app-container { padding: 10px; }
   .main-title { font-size: 1.7rem; }
   .subtitle { font-size: 0.85rem; margin-bottom: 25px; }
 
@@ -724,7 +726,7 @@ body {
 
 /* 13. 반응형 — 소형 모바일 (360px 이하, Galaxy S 등) */
 @media (max-width: 360px) {
-  .app-container { margin: 8px; }
+  .app-container { padding: 8px; }
   .main-title { font-size: 1.45rem; }
   .subtitle { font-size: 0.8rem; }
 
@@ -755,7 +757,7 @@ body {
 
 /* 13. 반응형 — 초소형 모바일 (320px 이하, iPhone SE 등) */
 @media (max-width: 320px) {
-  .app-container { margin: 6px; }
+  .app-container { padding: 6px; }
   .main-title { font-size: 1.3rem; }
   .subtitle { font-size: 0.75rem; }
 

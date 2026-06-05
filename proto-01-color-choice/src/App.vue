@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useGameState } from './composables/useGameState'
 import { useStorage } from './composables/useStorage'
 import AppHeader from './components/AppHeader.vue'
@@ -7,6 +7,7 @@ import NicknameSetup from './components/NicknameSetup.vue'
 import StartScreen from './components/StartScreen.vue'
 import RevealScreen from './components/RevealScreen.vue'
 import RecallScreen from './components/RecallScreen.vue'
+import RoundResultScreen from './components/RoundResultScreen.vue'
 import ResultsScreen from './components/ResultsScreen.vue'
 import StatsModal from './components/StatsModal.vue'
 import ToastNotification from './components/ToastNotification.vue'
@@ -15,29 +16,32 @@ const { hasNickname, setNickname } = useStorage()
 
 const {
   currentScreen,
-  difficulty,
-  targetColors,
-  userGuesses,
-  scores,
-  currentRoundIndex,
+  currentRound,
+  currentColorIndex,
+  roundColors,
+  roundGuesses,
+  roundColorScores,
+  allRoundResults,
+  eliminated,
   toastMessage,
   currentTarget,
-  grandScore,
-  tier,
-  isLastRound,
+  isLastColorInRound,
   timerRatio,
   timerSeconds,
+  cumulativeScore,
+  roundsCleared,
+  currentRoundScore,
+  currentRoundPassed,
+  tier,
   startGame,
   submitColor,
+  proceedAfterRound,
   goToHome,
   showToast,
   shareResults,
-  TOTAL_ROUNDS,
 } = useGameState()
 
 const showStats = ref(false)
-
-const themeClass = computed(() => `theme-${difficulty.value}`)
 
 function handleNicknameSubmit(name: string) {
   setNickname(name)
@@ -51,7 +55,7 @@ function handleProfileReset() {
 <template>
   <div class="bg-glow" />
 
-  <div class="app-container" :class="themeClass">
+  <div class="app-container">
     <AppHeader
       v-if="hasNickname"
       @go-home="goToHome"
@@ -59,7 +63,6 @@ function handleProfileReset() {
     />
 
     <main class="app-main">
-      <!-- 닉네임 미설정 시 최초 프로필 생성 -->
       <NicknameSetup
         v-if="!hasNickname"
         @submit="handleNicknameSubmit"
@@ -68,15 +71,13 @@ function handleProfileReset() {
       <template v-else>
         <StartScreen
           v-if="currentScreen === 'start'"
-          :difficulty="difficulty"
-          @update:difficulty="difficulty = $event"
           @start="startGame"
         />
 
         <RevealScreen
           v-if="currentScreen === 'reveal' && currentTarget"
-          :round-index="currentRoundIndex"
-          :total-rounds="TOTAL_ROUNDS"
+          :current-round="currentRound"
+          :current-color-index="currentColorIndex"
           :current-target="currentTarget"
           :timer-seconds="timerSeconds"
           :timer-ratio="timerRatio"
@@ -84,19 +85,32 @@ function handleProfileReset() {
 
         <RecallScreen
           v-if="currentScreen === 'recall'"
-          :round-index="currentRoundIndex"
-          :total-rounds="TOTAL_ROUNDS"
-          :is-last-round="isLastRound"
+          :current-round="currentRound"
+          :current-color-index="currentColorIndex"
+          :is-last-color-in-round="isLastColorInRound"
           @submit="submitColor"
+        />
+
+        <RoundResultScreen
+          v-if="currentScreen === 'round_result'"
+          :current-round="currentRound"
+          :round-colors="roundColors"
+          :round-guesses="roundGuesses"
+          :round-color-scores="roundColorScores"
+          :round-score="currentRoundScore"
+          :passed="currentRoundPassed"
+          :eliminated="eliminated"
+          :cumulative-score="cumulativeScore"
+          @proceed="proceedAfterRound"
         />
 
         <ResultsScreen
           v-if="currentScreen === 'results'"
-          :grand-score="grandScore"
+          :cumulative-score="cumulativeScore"
           :tier="tier"
-          :target-colors="targetColors"
-          :user-guesses="userGuesses"
-          :scores="scores"
+          :rounds-cleared="roundsCleared"
+          :eliminated="eliminated"
+          :all-round-results="allRoundResults"
           @restart="startGame"
           @share="shareResults"
         />

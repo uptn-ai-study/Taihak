@@ -1,34 +1,20 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
-import type { Difficulty, RankingEntry } from '../types/game'
+import { computed, onMounted } from 'vue'
+import type { RankingEntry } from '../types/game'
 import { useRanking } from '../composables/useRanking'
 import { useStorage } from '../composables/useStorage'
 
 const { getDailyRanking, loadRanking, isLoading } = useRanking()
 const { nickname } = useStorage()
 
-const selectedDifficulty = ref<Difficulty>('normal')
-
-const tabs: { key: Difficulty; label: string }[] = [
-  { key: 'easy', label: 'EASY' },
-  { key: 'normal', label: 'NORMAL' },
-  { key: 'hard', label: 'HARD' },
-]
-
 const ranking = computed<RankingEntry[]>(() => {
-  return getDailyRanking(selectedDifficulty.value)
+  return getDailyRanking('normal')
 })
 
 const hasEntries = computed(() => ranking.value.length > 0)
 
-// 탭 변경 시 해당 난이도 랭킹 로드
-watch(selectedDifficulty, (diff) => {
-  loadRanking(diff)
-})
-
-// 최초 로드
 onMounted(() => {
-  loadRanking(selectedDifficulty.value)
+  loadRanking('normal')
 })
 
 // 오늘 날짜 포맷 (표시용)
@@ -64,19 +50,6 @@ function tierClass(tier: string): string {
     <div class="ranking-header">
       <h4 class="ranking-title">오늘의 랭킹</h4>
       <span class="ranking-date">{{ todayFormatted }}</span>
-    </div>
-
-    <!-- 난이도 탭 -->
-    <div class="ranking-tabs">
-      <button
-        v-for="tab in tabs"
-        :key="tab.key"
-        class="ranking-tab"
-        :class="{ active: selectedDifficulty === tab.key }"
-        @click="selectedDifficulty = tab.key"
-      >
-        {{ tab.label }}
-      </button>
     </div>
 
     <!-- 랭킹 목록 -->

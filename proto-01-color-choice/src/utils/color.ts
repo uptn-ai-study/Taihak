@@ -178,13 +178,13 @@ export function rgbToCss(rgb: RgbColor): string {
 }
 
 /**
- * 점수 → 등급 변환
+ * 누적 점수 → 등급 변환 (300점 만점 기준)
  */
 export function scoreToTier(score: number): 'S' | 'A' | 'B' | 'C' | 'F' {
-  if (score >= 28.50) return 'S'
-  if (score >= 27.00) return 'A'
-  if (score >= 24.00) return 'B'
-  if (score >= 18.00) return 'C'
+  if (score >= 270) return 'S'   // 90%+
+  if (score >= 240) return 'A'   // 80%+
+  if (score >= 200) return 'B'   // 67%+
+  if (score >= 150) return 'C'   // 50%+
   return 'F'
 }
 

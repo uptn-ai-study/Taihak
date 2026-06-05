@@ -1,21 +1,11 @@
 <script setup lang="ts">
-import type { Difficulty } from '../types/game'
-import { DIFFICULTY_CONFIGS } from '../composables/useGameState'
+import { TOTAL_ROUNDS, COLORS_PER_ROUND, PASS_THRESHOLD } from '../composables/useGameState'
 import { useStorage } from '../composables/useStorage'
 import DailyRanking from './DailyRanking.vue'
 
-const props = defineProps<{
-  difficulty: Difficulty
-}>()
-
-const emit = defineEmits<{
-  'update:difficulty': [value: Difficulty]
-  start: []
-}>()
+defineEmits<{ start: [] }>()
 
 const { recentRecords } = useStorage()
-
-const difficulties = Object.entries(DIFFICULTY_CONFIGS) as [Difficulty, typeof DIFFICULTY_CONFIGS[Difficulty]][]
 </script>
 
 <template>
@@ -26,46 +16,83 @@ const difficulties = Object.entries(DIFFICULTY_CONFIGS) as [Difficulty, typeof D
         <span class="highlight">측정해 보세요</span>
       </h1>
       <p class="subtitle">
-        제시되는 3개의 색상들을 기억한 뒤 HSB 슬라이더로 재현해 보세요.<br>
-        사람의 눈이 느끼는 미세한 색차(CIEDE2000)를 기준으로 당신의 감각을 채점합니다.
+        매 라운드 {{ COLORS_PER_ROUND }}개의 색상을 기억하고 HSB 슬라이더로 재현하세요.<br>
+        라운드 점수 {{ PASS_THRESHOLD }}점 이상이면 통과, 미달 시 탈락!<br>
+        최대 {{ TOTAL_ROUNDS }}라운드까지 도전할 수 있습니다.
       </p>
 
+      <!-- 게임 규칙 카드 -->
       <div class="config-card glass-panel">
-        <h3 class="card-title">난이도 선택</h3>
-        <div class="difficulty-options">
-          <label v-for="[key, config] in difficulties" :key="key" class="diff-option">
-            <input
-              type="radio"
-              name="difficulty"
-              :value="key"
-              :checked="props.difficulty === key"
-              @change="emit('update:difficulty', key)"
-            >
-            <div class="diff-card">
-              <span class="diff-name">{{ config.label }}</span>
-              <span class="diff-desc">{{ config.description }}</span>
-            </div>
-          </label>
-        </div>
-      </div>
-
-      <button class="btn btn-primary btn-glow" @click="emit('start')">
-        도전 시작하기
-      </button>
-
-      <div v-if="recentRecords.length > 0" class="recent-records glass-panel">
-        <h4 class="records-title">최근 최고 기록</h4>
-        <div class="records-list">
-          <div v-for="(rec, i) in recentRecords" :key="i" class="record-row">
-            <span class="record-date">{{ rec.date }}</span>
-            <span class="record-diff">{{ rec.difficulty }}</span>
-            <span class="record-score">{{ rec.score.toFixed(2) }}점 ({{ rec.tier }}등급)</span>
+        <h3 class="card-title">게임 규칙</h3>
+        <div class="rules-list">
+          <div class="rule-item">
+            <span class="rule-icon">🎯</span>
+            <span class="rule-text">라운드당 {{ COLORS_PER_ROUND }}색상 암기 → 복원 (색상당 5초)</span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-icon">✅</span>
+            <span class="rule-text">라운드 {{ PASS_THRESHOLD }}점 이상 → 다음 라운드 진행</span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-icon">❌</span>
+            <span class="rule-text">{{ PASS_THRESHOLD }}점 미달 → 탈락</span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-icon">🏆</span>
+            <span class="rule-text">{{ TOTAL_ROUNDS }}라운드 완주 시 최대 {{ TOTAL_ROUNDS * 30 }}점</span>
           </div>
         </div>
       </div>
 
-      <!-- 일간 랭킹 -->
+      <button class="btn btn-primary btn-glow" @click="$emit('start')">
+        도전 시작하기
+      </button>
+
+      <div v-if="recentRecords.length > 0" class="recent-records glass-panel">
+        <h4 class="records-title">최근 기록</h4>
+        <div class="records-list">
+          <div v-for="(rec, i) in recentRecords" :key="i" class="record-row">
+            <span class="record-date">{{ rec.date }}</span>
+            <span class="record-diff">{{ rec.roundsCleared }}/{{ rec.totalRounds }}R</span>
+            <span class="record-score">{{ rec.score.toFixed(2) }}점 ({{ rec.tier }})</span>
+          </div>
+        </div>
+      </div>
+
       <DailyRanking />
     </div>
   </section>
 </template>
+
+<style scoped>
+.rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rule-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.rule-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+
+.rule-text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+  .rule-text { font-size: 0.8rem; }
+  .rule-icon { font-size: 1rem; }
+}
+</style>

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { hsbToRgb, rgbToCss } from '../utils/color'
+import { TOTAL_ROUNDS, COLORS_PER_ROUND } from '../composables/useGameState'
 
 const props = defineProps<{
-  roundIndex: number
-  totalRounds: number
-  isLastRound: boolean
+  currentRound: number
+  currentColorIndex: number
+  isLastColorInRound: boolean
 }>()
 
 const emit = defineEmits<{
@@ -16,8 +17,8 @@ const hue = ref(180)
 const sat = ref(50)
 const bri = ref(50)
 
-// 라운드 변경 시 슬라이더 초기화
-watch(() => props.roundIndex, () => {
+// 색상 변경 시 슬라이더 초기화
+watch([() => props.currentRound, () => props.currentColorIndex], () => {
   hue.value = 180
   sat.value = 50
   bri.value = 50
@@ -26,14 +27,12 @@ watch(() => props.roundIndex, () => {
 const guessRgb = computed(() => hsbToRgb(hue.value, sat.value, bri.value))
 const guessColor = computed(() => rgbToCss(guessRgb.value))
 
-// 채도 슬라이더 그라디언트
 const satGradient = computed(() => {
   const left = rgbToCss(hsbToRgb(hue.value, 0, bri.value))
   const right = rgbToCss(hsbToRgb(hue.value, 100, bri.value))
   return `linear-gradient(to right, ${left}, ${right})`
 })
 
-// 명도 슬라이더 그라디언트
 const briGradient = computed(() => {
   const left = rgbToCss(hsbToRgb(hue.value, sat.value, 0))
   const right = rgbToCss(hsbToRgb(hue.value, sat.value, 100))
@@ -61,23 +60,25 @@ function handleSubmit() {
 <template>
   <section class="screen">
     <div class="recall-container">
-      <!-- 프로그레스 -->
       <div class="game-progress">
+        <div class="progress-info">
+          <span class="progress-round">라운드 {{ currentRound + 1 }}/{{ TOTAL_ROUNDS }}</span>
+          <span class="progress-divider">·</span>
+          <span class="progress-color">색상 {{ currentColorIndex + 1 }}/{{ COLORS_PER_ROUND }}</span>
+        </div>
         <div class="progress-steps">
           <div
-            v-for="i in totalRounds"
+            v-for="i in COLORS_PER_ROUND"
             :key="i"
             class="dot"
             :class="{
-              active: i - 1 === roundIndex,
-              completed: i - 1 < roundIndex
+              active: i - 1 === currentColorIndex,
+              completed: i - 1 < currentColorIndex
             }"
           />
         </div>
-        <div class="progress-text">색상 {{ roundIndex + 1 }} / {{ totalRounds }}</div>
       </div>
 
-      <!-- 비교 타일 -->
       <div class="compare-board">
         <div class="compare-tile-wrapper">
           <span class="tile-label">기억 속 색상</span>
@@ -91,9 +92,7 @@ function handleSubmit() {
         </div>
       </div>
 
-      <!-- 슬라이더 패널 -->
       <div class="control-panel glass-panel">
-        <!-- Hue -->
         <div class="control-group">
           <div class="control-header">
             <span class="control-name">HUE (색상)</span>
@@ -106,7 +105,6 @@ function handleSubmit() {
           </div>
         </div>
 
-        <!-- Saturation -->
         <div class="control-group">
           <div class="control-header">
             <span class="control-name">SATURATION (채도)</span>
@@ -120,7 +118,6 @@ function handleSubmit() {
           </div>
         </div>
 
-        <!-- Brightness -->
         <div class="control-group">
           <div class="control-header">
             <span class="control-name">BRIGHTNESS (명도)</span>
@@ -136,8 +133,23 @@ function handleSubmit() {
       </div>
 
       <button class="btn btn-primary btn-glow" @click="handleSubmit">
-        {{ isLastRound ? '최종 점수 확인하기' : '색상 확정하기' }}
+        색상 확정하기
       </button>
     </div>
   </section>
 </template>
+
+<style scoped>
+.progress-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.progress-round { color: var(--color-primary); }
+.progress-divider { color: var(--text-muted); }
+.progress-color { color: var(--text-muted); }
+</style>

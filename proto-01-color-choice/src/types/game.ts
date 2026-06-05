@@ -33,8 +33,8 @@ export interface GameColor {
   lab: LabColor
 }
 
-/** 라운드별 채점 결과 */
-export interface RoundScore {
+/** 개별 색상 채점 결과 */
+export interface ColorScore {
   score: number      // 0.00 ~ 10.00
   deltaE: number     // CIEDE2000 색차
   deltaH: number     // Hue 오차
@@ -42,53 +42,44 @@ export interface RoundScore {
   deltaB: number     // Brightness 오차
 }
 
-/** 게임 난이도 */
-export type Difficulty = 'easy' | 'normal' | 'hard'
-
 /** 게임 화면 */
-export type GameScreen = 'start' | 'reveal' | 'recall' | 'results'
+export type GameScreen = 'start' | 'reveal' | 'recall' | 'round_result' | 'results'
 
 /** 등급 */
 export type Tier = 'S' | 'A' | 'B' | 'C' | 'F'
 
-/** 난이도별 설정 */
-export interface DifficultyConfig {
-  label: string
-  description: string
-  revealTime: number // ms
+/** 난이도 (DB 호환용, UI에서는 사용하지 않음) */
+export type Difficulty = 'easy' | 'normal' | 'hard'
+
+/** 라운드 결과 (3색상 묶음) */
+export interface RoundResult {
+  round: number               // 1-based 라운드 번호
+  targetColors: GameColor[]   // 정답 색상 3개
+  userGuesses: GameColor[]    // 사용자 추측 3개
+  colorScores: ColorScore[]   // 개별 색상 점수 3개
+  totalScore: number          // 라운드 합산 (max 30)
+  passed: boolean             // 통과 여부
 }
 
 /** 저장된 게임 기록 */
 export interface GameRecord {
   date: string
-  difficulty: string
-  score: number
+  roundsCleared: number  // 통과한 라운드 수
+  totalRounds: number    // 전체 라운드 수
+  score: number          // 누적 점수
   tier: Tier
+  eliminated: boolean    // 탈락 여부
 }
 
-/**
- * 랭킹 엔트리 (DB 마이그레이션 대비 구조)
- * - 추후 DB 전환 시 이 인터페이스를 테이블 스키마로 매핑
- * - id: DB 전환 시 auto-increment PK로 교체
- * - userId: 추후 회원 체계 연동 시 회원 ID로 교체
- */
+/** 랭킹 엔트리 */
 export interface RankingEntry {
-  id: string              // UUID (DB 전환 시 PK)
-  userId: string          // 현재는 닉네임, 추후 회원 ID
-  nickname: string        // 표시용 닉네임
-  difficulty: Difficulty
-  score: number           // 최종 점수 (30점 만점)
+  id: string
+  userId: string
+  nickname: string
+  difficulty: Difficulty    // DB 호환용 (항상 'normal')
+  score: number             // 누적 점수 (max 300)
   tier: Tier
-  date: string            // YYYY-MM-DD (일간 구분 키)
-  timestamp: number       // Unix ms (정렬용)
-}
-
-/**
- * 랭킹 저장소 파일 구조 (JSON 파일 시스템 시뮬레이션)
- * - 날짜별 + 난이도별로 파티셔닝
- * - DB 전환 시: date + difficulty 복합 인덱스로 매핑
- */
-export interface RankingStore {
-  version: number
-  entries: RankingEntry[]
+  date: string
+  timestamp: number
+  roundsCleared?: number    // 통과한 라운드 수
 }
