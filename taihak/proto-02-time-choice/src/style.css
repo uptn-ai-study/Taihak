@@ -1,0 +1,408 @@
+/* ============================================================
+   UI-COMMON.md 기반 전역 스타일 + 게임 전용 스타일
+   ============================================================ */
+
+/* ─── Google Font (SUIT Variable) ─── */
+@import url('https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/SUIT-Variable.min.css');
+
+/* ─── CSS Variables (UI-COMMON.md §1) ─── */
+:root {
+  --primary:       #5F46FF;
+  --primary-dark:  #4A35E0;
+  --primary-light: #EEEAFF;
+  --primary-200:   #F2F0FF;
+  --primary-dim:   rgba(95, 70, 255, 0.10);
+  --card-bg:       #FFFFFF;
+  --muted-bg:      #F5F5F8;
+  --border:        #E5E7EB;
+  --text-1:        #111827;
+  --text-2:        #6B7280;
+  --text-3:        #9CA3AF;
+  --success:       #10B981;
+  --error:         #EF4444;
+
+  /* 앱 배경 */
+  --app-bg:        #0D0D18;
+  --app-card-bg:   #16162A;
+  --app-border:    rgba(255, 255, 255, 0.08);
+}
+
+/* ─── Reset & Base ─── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'SUIT Variable', 'SUIT', -apple-system, sans-serif;
+  background: var(--app-bg);
+  color: #FFFFFF;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── 앱 카드 래퍼 ─── */
+.game-shell {
+  width: 100%;
+  max-width: 420px;
+  height: 100%;
+  max-height: 750px;
+  background: var(--app-card-bg);
+  border-radius: 28px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 440px) {
+  .game-shell {
+    border-radius: 0;
+    max-height: 100%;
+  }
+}
+
+/* ─── 화면 전환 ─── */
+.screen-enter-active,
+.screen-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.screen-enter-from {
+  opacity: 0;
+  transform: translateY(16px);
+}
+.screen-leave-to {
+  opacity: 0;
+  transform: translateY(-16px);
+}
+
+/* ─── Button (UI-COMMON.md §6) ─── */
+.btn-primary {
+  width: 100%;
+  height: 56px;
+  background: var(--primary);
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s ease;
+}
+.btn-primary:active {
+  background: var(--primary-dark);
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  flex: 1;
+  height: 56px;
+  background: var(--primary-200);
+  color: var(--primary);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s ease;
+}
+.btn-secondary:active {
+  transform: scale(0.98);
+}
+
+.btn-gray {
+  height: 44px;
+  padding: 0 20px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--app-border);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ─── 난이도 토글 Pill ─── */
+.difficulty-pills {
+  display: flex;
+  gap: 8px;
+}
+.pill {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  border: 1.5px solid var(--app-border);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.pill.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #FFFFFF;
+}
+
+/* ─── 라운드 인디케이터 ─── */
+.round-indicator {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ─── 게임 링 (원형 타이머 비주얼) ─── */
+.ring-wrap {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  flex-shrink: 0;
+}
+.ring-wrap svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.ring-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 12;
+}
+.ring-progress {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 12;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.05s linear;
+}
+.ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+}
+.ring-time {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: #FFFFFF;
+}
+.ring-unit {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+}
+
+/* ─── 재현 버튼 ─── */
+.recreate-btn {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 3px solid var(--primary);
+  background: var(--primary-dim);
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+.recreate-btn.pressing {
+  background: var(--primary);
+  transform: scale(0.95);
+  box-shadow: 0 0 40px rgba(95, 70, 255, 0.5);
+}
+.recreate-btn-icon {
+  font-size: 28px;
+}
+.recreate-btn-label {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* ─── 결과 바 ─── */
+.result-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.result-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.result-bar-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  width: 36px;
+  flex-shrink: 0;
+}
+.result-bar-track {
+  flex: 1;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: visible;
+  position: relative;
+}
+.result-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.result-bar-fill.target {
+  background: rgba(255, 255, 255, 0.7);
+}
+.result-bar-fill.player {
+  background: var(--primary);
+}
+.result-bar-time {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  width: 40px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ─── 점수 표시 ─── */
+.score-display {
+  font-size: 64px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  line-height: 1;
+  background: linear-gradient(135deg, #FFFFFF 0%, var(--primary-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.score-max {
+  font-size: 22px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.35);
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0;
+}
+
+/* ─── 라운드 점수 그리드 ─── */
+.round-scores-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+.round-score-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 12px 4px;
+  opacity: 0;
+  animation: fadeUp 0.4s ease forwards;
+}
+.round-score-num {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 600;
+}
+.round-score-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+/* ─── 카운트다운 숫자 ─── */
+.countdown-number {
+  font-size: 120px;
+  font-weight: 700;
+  letter-spacing: -4px;
+  line-height: 1;
+  color: #FFFFFF;
+  animation: countPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ─── Animations ─── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes countPop {
+  from { opacity: 0; transform: scale(0.6); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+@keyframes ringFlash {
+  0%   { stroke: var(--primary); }
+  50%  { stroke: #FFFFFF; }
+  100% { stroke: var(--primary); }
+}
+.ring-done .ring-progress {
+  animation: ringFlash 0.4s ease 2;
+}
+
+/* ─── 플로팅 파티클 (인트로 배경) ─── */
+.intro-bg-wrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.intro-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--primary);
+  opacity: 0.15;
+  animation: floatUp linear infinite;
+}
+@keyframes floatUp {
+  from { transform: translateY(0) scale(1); opacity: 0.15; }
+  to   { transform: translateY(-120%) scale(0.3); opacity: 0; }
+}
+
+/* ─── 분리선 ─── */
+.divider {
+  width: 100%;
+  height: 1px;
+  background: var(--app-border);
+}
