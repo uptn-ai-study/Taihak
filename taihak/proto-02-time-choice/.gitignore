@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 *.mp4
 *.MP4
+.vite
+.vite/*
