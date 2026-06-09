@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>네온 스피로그래프 — Time Game Visual</title>
+  <style>
+    /* ── 리셋 & 배경 ── */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #000000;  /* 원본과 동일한 순수 검정 */
+    }
+    canvas {
+      display: block;
+      touch-action: none;  /* 터치 스크롤 방지 */
+    }
+
+    /* ── UI 오버레이 ── */
+    #ui {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 52px;
+      pointer-events: none;
+      gap: 12px;
+    }
+
+    #status {
+      font-family: -apple-system, 'Helvetica Neue', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(200, 170, 255, 0.6);
+    }
+
+    #hint {
+      font-family: -apple-system, 'Helvetica Neue', sans-serif;
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.35);
+      letter-spacing: 0.3px;
+      transition: opacity 0.4s ease;
+    }
+    #hint.hidden { opacity: 0; }
+
+    #reset-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.5);
+      font-size: 12px;
+      padding: 8px 16px;
+      border-radius: 99px;
+      cursor: pointer;
+      font-family: -apple-system, sans-serif;
+      letter-spacing: 1px;
+    }
+    #reset-btn:hover { background: rgba(255,255,255,0.12); }
+  </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<div id="ui">
+  <div id="status">NEON SPIROGRAPH</div>
+  <div id="hint">화면을 누르고 있으면 그려집니다</div>
+</div>
+<button id="reset-btn">RESET</button>
+
+<script>
+// ============================================================
+// ■ 스피로그래프 파라미터 (Spirograph Parameters)
+//   에피트로코이드(Epitrochoid) 기반 매개변수 방정식:
+//   x(t) = R·cos(t) + r·cos((R/r)·t)
+//   y(t) = R·sin(t) - r·sin((R/r)·t)
+// ============================================================
+const 외원R = 7           // R: 바깥 원의 반경 비율
+const 내원r = 3           // r: 안쪽 원의 반경 비율
+// R/r = 7/3 (기약분수) → 패턴이 닫히는 주기 = 2π × 3 = 6π
+const 전체주기T = 2 * Math.PI * 내원r   // ≈ 18.85 rad (≈ 6π)
+
+// ── 애니메이션 속도 ──
+const 회전속도_rad초당 = 0.35          // 전체 캔버스 회전 (rad/sec)
+const 그리기_초당완성시간 = 4.0        // 몇 초에 패턴 완성 (초)
+const 그리기속도_rad초당 = 전체주기T / 그리기_초당완성시간
+
+// ── 점 품질 (세그먼트 수) ──
+const 전체세그먼트수 = 2400   // 부드러운 곡선을 위한 사전 계산 포인트 수
+
+// ============================================================
+// ■ 캔버스 초기화
+// ============================================================
+const canvas  = document.getElementById('canvas')
+const ctx     = canvas.getContext('2d')
+const hint    = document.getElementById('hint')
+const status  = document.getElementById('status')
+const dpr     = window.devicePixelRatio || 1
+
+let 화면너비, 화면높이, 단위크기
+let 사전계산포인트 = []  // 전체 스피로그래프 포인트 배열 (성능 최적화)
+
+function 캔버스초기화() {
+  화면너비 = window.innerWidth
+  화면높이 = window.innerHeight
+  canvas.width  = 화면너비 * dpr
+  canvas.height = 화면높이 * dpr
+  canvas.style.width  = 화면너비 + 'px'
+  canvas.style.height = 화면높이 + 'px'
+  ctx.scale(dpr, dpr)
+
+  // 화면에 꽉 차도록 단위 크기 계산 (최대 반지름 = 화면의 44%)
+  단위크기 = (Math.min(화면너비, 화면높이) * 0.44) / (외원R + 내원r)
+
+  // ── 포인트 사전 계산 (성능 최적화: 매 프레임 재계산 방지) ──
+  사전계산포인트 = []
+  const 비율 = 외원R / 내원r
+  for (let i = 0; i <= 전체세그먼트수; i++) {
+    const t = (i / 전체세그먼트수) * 전체주기T
+    사전계산포인트.push({
+      x: (외원R * Math.cos(t) + 내원r * Math.cos(비율 * t)) * 단위크기,
+      y: (외원R * Math.sin(t) - 내원r * Math.sin(비율 * t)) * 단위크기,
+    })
+  }
+}
+
+캔버스초기화()
+window.addEventListener('resize', () => { ctx.setTransform(1,0,0,1,0,0); 캔버스초기화() })
+
+// ============================================================
+// ■ 상태 변수 (State)
+// ============================================================
+let 현재진행도 = 0          // 0.0 ~ 1.0 (패턴 완성 비율)
+let 전체회전각 = 0          // 누적 캔버스 회전각 (rad)
+let 눌림중     = false
+let 고정됨     = false
+let 이전시각   = performance.now()
+
+// ============================================================
+// ■ 네온 글로우 렌더링 함수
+//   globalCompositeOperation = 'lighter' → Additive Blending
+//   겹칠수록 밝아지는 빛 번짐 효과 구현
+// ============================================================
+function 네온그리기(진행도) {
+  if (진행도 <= 0) return
+
+  // 현재까지 그릴 포인트 수 계산
+  const 포인트수 = Math.max(2, Math.floor(진행도 * 전체세그먼트수))
+
+  // ── 3단계 글로우 레이어 (바깥→안쪽 순서) ──
+  const 글로우단계 = [
+    { 블러: 28, 선굵기: 6,   투명도: 0.10 },  // 1단계: 넓은 외부 빛 번짐
+    { 블러: 12, 선굵기: 2.5, 투명도: 0.30 },  // 2단계: 중간 글로우
+    { 블러: 4,  선굵기: 1.3, 투명도: 0.90 },  // 3단계: 선명한 코어 선
+  ]
+
+  ctx.save()
+  // Additive Blending: 빛이 겹쳐서 더 밝아지는 효과
+  ctx.globalCompositeOperation = 'lighter'
+  ctx.lineCap  = 'round'
+  ctx.lineJoin = 'round'
+
+  // ── 색상 배치 (10구간으로 나눠 그라디언트 표현) ──
+  // 색조: 280°(인디고/보라) → 200°(하늘파랑)  진행될수록 파랑으로
+  const 색상구간수 = 12
+  const 구간크기  = Math.floor(포인트수 / 색상구간수)
+
+  글로우단계.forEach(단계 => {
+    ctx.lineWidth  = 단계.선굵기
+    ctx.shadowBlur = 단계.블러
+
+    for (let 구간 = 0; 구간 < 색상구간수; 구간++) {
+      const 시작인덱스 = 구간 * 구간크기
+      const 끝인덱스  = 구간 === 색상구간수 - 1
+        ? 포인트수 - 1
+        : 시작인덱스 + 구간크기
+
+      if (시작인덱스 >= 포인트수 - 1) break
+
+      // 진행률에 따른 색상 (초기=보라, 후기=파랑)
+      const 진행률 = 구간 / (색상구간수 - 1)
+      const 색조   = Math.round(280 - 진행률 * 80)     // 280 → 200
+      const 밝기   = Math.round(55 + 진행률 * 15)      // 55% → 70%
+      const 채도   = 85
+
+      ctx.shadowColor = `hsl(${색조}, ${채도}%, ${밝기}%)`
+      ctx.strokeStyle = `hsla(${색조}, ${채도}%, ${밝기}%, ${단계.투명도})`
+
+      ctx.beginPath()
+      ctx.moveTo(사전계산포인트[시작인덱스].x, 사전계산포인트[시작인덱스].y)
+      for (let i = 시작인덱스 + 1; i <= 끝인덱스; i++) {
+        ctx.lineTo(사전계산포인트[i].x, 사전계산포인트[i].y)
+      }
+      ctx.stroke()
+    }
+  })
+
+  // ── 선두 발광 점 (Leading Glow Dot) ──
+  // 가장 최근에 그려지는 끝 지점에 강한 빛 효과
+  if (진행도 < 0.998 && 포인트수 > 0) {
+    const 끝점 = 사전계산포인트[포인트수 - 1]
+    ctx.shadowBlur = 0
+    ctx.globalAlpha = 1
+
+    // 부드러운 방사형 글로우 헤일로
+    const 글로우그라디언트 = ctx.createRadialGradient(
+      끝점.x, 끝점.y, 0,
+      끝점.x, 끝점.y, 26
+    )
+    글로우그라디언트.addColorStop(0,    'rgba(200, 165, 255, 0.95)')
+    글로우그라디언트.addColorStop(0.35, 'rgba(160, 120, 255, 0.55)')
+    글로우그라디언트.addColorStop(1,    'rgba(100,  75, 255, 0)')
+    ctx.fillStyle = 글로우그라디언트
+    ctx.beginPath()
+    ctx.arc(끝점.x, 끝점.y, 26, 0, Math.PI * 2)
+    ctx.fill()
+
+    // 밝은 코어 점 (선에 가까운 흰색/라벤더)
+    ctx.fillStyle   = 'rgba(250, 240, 255, 1)'
+    ctx.shadowBlur  = 14
+    ctx.shadowColor = 'rgba(210, 185, 255, 1)'
+    ctx.beginPath()
+    ctx.arc(끝점.x, 끝점.y, 4, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  ctx.restore()
+}
+
+// ============================================================
+// ■ 메인 렌더링 루프 (Delta Time 기반 requestAnimationFrame)
+// ============================================================
+function 렌더링루프(현재시각) {
+  // ── 델타 타임 계산 (프레임 속도 독립적 애니메이션) ──
+  const 델타초 = Math.min((현재시각 - 이전시각) / 1000, 0.05)
+  이전시각 = 현재시각
+
+  // ── 상태 업데이트 (고정 상태가 아닐 때만) ──
+  if (!고정됨) {
+    if (눌림중) {
+      // 누르고 있는 동안: 진행도 증가
+      현재진행도 = Math.min(현재진행도 + (그리기속도_rad초당 / 전체주기T) * 델타초, 1)
+    }
+    // 캔버스는 항상 천천히 회전 (상태 무관)
+    전체회전각 += 회전속도_rad초당 * 델타초
+  }
+
+  // ── 캔버스 초기화 ──
+  ctx.clearRect(0, 0, 화면너비, 화면높이)
+
+  // ── 중앙 이동 + 전체 회전 변환 적용 ──
+  ctx.save()
+  ctx.translate(화면너비 / 2, 화면높이 / 2)
+  ctx.rotate(전체회전각)
+
+  // ── 스피로그래프 네온 렌더링 ──
+  네온그리기(현재진행도)
+
+  ctx.restore()
+
+  // ── 다음 프레임 요청 ──
+  requestAnimationFrame(렌더링루프)
+}
+
+// ============================================================
+// ■ 이벤트 리스너 (터치 / 마우스 인터랙션)
+// ============================================================
+
+// 누름 시작: 그리기 시작
+function 누름시작(e) {
+  e.preventDefault()
+  if (고정됨) return
+  눌림중 = true
+  hint.classList.add('hidden')
+  status.textContent = 'DRAWING...'
+}
+
+// 누름 종료: 현재 상태 즉시 정지(Freeze)
+function 누름종료(e) {
+  e.preventDefault?.()
+  if (!눌림중) return
+  눌림중 = false
+  고정됨 = true
+  status.textContent = 'FROZEN'
+  hint.style.opacity = '1'
+  hint.textContent  = '화면을 클릭하면 리셋됩니다'
+  hint.classList.remove('hidden')
+}
+
+canvas.addEventListener('mousedown',   누름시작)
+canvas.addEventListener('mouseup',     누름종료)
+canvas.addEventListener('mouseleave',  누름종료)
+canvas.addEventListener('touchstart',  누름시작,  { passive: false })
+canvas.addEventListener('touchend',    누름종료,  { passive: false })
+canvas.addEventListener('touchcancel', 누름종료,  { passive: false })
+
+// ── 리셋 버튼 ──
+function 리셋() {
+  현재진행도 = 0
+  고정됨     = false
+  눌림중     = false
+  status.textContent = 'NEON SPIROGRAPH'
+  hint.textContent   = '화면을 누르고 있으면 그려집니다'
+  hint.classList.remove('hidden')
+}
+
+document.getElementById('reset-btn').addEventListener('click', 리셋)
+canvas.addEventListener('click', () => { if (고정됨) 리셋() })
+
+// ============================================================
+// ■ 시작
+// ============================================================
+requestAnimationFrame(렌더링루프)
+</script>
+</body>
+</html>
