@@ -1,5 +1,6 @@
 /* ============================================================
    UI-COMMON.md 기반 전역 스타일 + 게임 전용 스타일
+   반응형 웹 UI (다양한 모바일 해상도 지원)
    ============================================================ */
 
 /* ─── Google Font (SUIT Variable) ─── */
@@ -25,6 +26,30 @@
   --app-bg:        #0D0D18;
   --app-card-bg:   #16162A;
   --app-border:    rgba(255, 255, 255, 0.08);
+
+  /* ─── 반응형 간격/사이즈 토큰 ─── */
+  /* clamp(최소, 권장, 최대) — vw 기준 유동 스케일 */
+  --space-xs:  clamp(6px,  1.5vw, 10px);
+  --space-sm:  clamp(10px, 2.5vw, 16px);
+  --space-md:  clamp(16px, 4vw,   24px);
+  --space-lg:  clamp(20px, 5vw,   32px);
+  --space-xl:  clamp(24px, 6vw,   40px);
+
+  /* 유동 폰트 사이즈 */
+  --fs-xs:   clamp(10px, 2.5vw, 12px);
+  --fs-sm:   clamp(12px, 3vw,   14px);
+  --fs-base: clamp(13px, 3.5vw, 16px);
+  --fs-lg:   clamp(15px, 4vw,   18px);
+  --fs-xl:   clamp(20px, 5.5vw, 28px);
+  --fs-2xl:  clamp(28px, 8vw,   46px);
+  --fs-3xl:  clamp(48px, 14vw,  80px);  /* 카운트다운 숫자 */
+  --fs-score: clamp(44px, 13vw, 64px);  /* 최종 점수 */
+
+  /* Safe Area (노치/홈바) */
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left, 0px);
+  --safe-right:  env(safe-area-inset-right, 0px);
 }
 
 /* ─── Reset & Base ─── */
@@ -36,7 +61,14 @@
 
 html, body {
   height: 100%;
+  /* iOS Safari에서 바운스 스크롤 방지 */
   overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html {
+  /* iOS Safari 100vh 버그 대응 */
+  height: -webkit-fill-available;
 }
 
 body {
@@ -45,21 +77,33 @@ body {
   color: #FFFFFF;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* iOS Safari 100dvh 대응 */
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 #app {
   height: 100%;
+  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Safe Area 내에서 앱 카드 중앙 정렬 */
+  padding:
+    var(--safe-top)
+    var(--safe-right)
+    var(--safe-bottom)
+    var(--safe-left);
 }
 
 /* ─── 앱 카드 래퍼 ─── */
 .game-shell {
   width: 100%;
   max-width: 420px;
+  /* 높이: 뷰포트 100% 이하, 최대 820px (tall 기기 여백 확보) */
   height: 100%;
-  max-height: 750px;
+  height: 100dvh;
+  max-height: min(820px, 100dvh);
   background: var(--app-card-bg);
   border-radius: 28px;
   overflow: hidden;
@@ -69,10 +113,30 @@ body {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
 }
 
-@media (max-width: 440px) {
+/* ── 중간 모바일 (430px 이하: iPhone 14 Pro Max 등) ── */
+@media (max-width: 430px) {
   .game-shell {
     border-radius: 0;
-    max-height: 100%;
+    max-height: 100dvh;
+  }
+}
+
+/* ── 소형 모바일 (375px 이하: iPhone SE, Galaxy A 시리즈 등) ── */
+@media (max-width: 375px) {
+  .game-shell {
+    border-radius: 0;
+    max-height: 100dvh;
+  }
+}
+
+/* ── 랜드스케이프 모바일 ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .game-shell {
+    border-radius: 0;
+    max-width: 100%;
+    max-height: 100dvh;
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 }
 
@@ -93,10 +157,10 @@ body {
 /* ─── Button (UI-COMMON.md §6) ─── */
 .btn-primary {
   width: 100%;
-  height: 56px;
+  height: clamp(48px, 12vw, 56px);
   background: var(--primary);
   color: #FFFFFF;
-  font-size: 16px;
+  font-size: var(--fs-base);
   font-weight: 700;
   letter-spacing: -0.3px;
   border-radius: 12px;
@@ -104,6 +168,9 @@ body {
   cursor: pointer;
   font-family: inherit;
   transition: transform 0.1s ease;
+  /* 터치 피드백 개선 */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .btn-primary:active {
   background: var(--primary-dark);
@@ -112,10 +179,10 @@ body {
 
 .btn-secondary {
   flex: 1;
-  height: 56px;
+  height: clamp(48px, 12vw, 56px);
   background: var(--primary-200);
   color: var(--primary);
-  font-size: 16px;
+  font-size: var(--fs-base);
   font-weight: 700;
   letter-spacing: -0.3px;
   border-radius: 12px;
@@ -123,18 +190,20 @@ body {
   cursor: pointer;
   font-family: inherit;
   transition: transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .btn-secondary:active {
   transform: scale(0.98);
 }
 
 .btn-gray {
-  height: 44px;
-  padding: 0 20px;
+  height: clamp(40px, 10vw, 44px);
+  padding: 0 clamp(14px, 4vw, 20px);
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.6);
   border: 1px solid var(--app-border);
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   border-radius: 12px;
   cursor: pointer;
@@ -144,20 +213,22 @@ body {
 /* ─── 난이도 토글 Pill ─── */
 .difficulty-pills {
   display: flex;
-  gap: 8px;
+  gap: clamp(6px, 1.5vw, 8px);
 }
 .pill {
   flex: 1;
-  height: 44px;
+  height: clamp(40px, 10vw, 44px);
   border-radius: 12px;
   border: 1.5px solid var(--app-border);
   background: transparent;
   color: rgba(255, 255, 255, 0.4);
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .pill.active {
   background: var(--primary);
@@ -167,7 +238,7 @@ body {
 
 /* ─── 라운드 인디케이터 ─── */
 .round-indicator {
-  font-size: 13px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.4);
   letter-spacing: 0.5px;
@@ -177,8 +248,9 @@ body {
 /* ─── 게임 링 (원형 타이머 비주얼) ─── */
 .ring-wrap {
   position: relative;
-  width: 220px;
-  height: 220px;
+  /* clamp: 소형폰(320px)~표준폰(420px) 유동 크기 */
+  width:  clamp(160px, 52vw, 220px);
+  height: clamp(160px, 52vw, 220px);
   flex-shrink: 0;
 }
 .ring-wrap svg {
@@ -208,26 +280,26 @@ body {
   gap: 4px;
 }
 .ring-time {
-  font-size: 36px;
+  font-size: clamp(28px, 8vw, 36px);
   font-weight: 700;
   letter-spacing: -1px;
   color: #FFFFFF;
 }
 .ring-unit {
-  font-size: 13px;
+  font-size: var(--fs-xs);
   color: rgba(255, 255, 255, 0.4);
   font-weight: 500;
 }
 
 /* ─── 재현 버튼 ─── */
 .recreate-btn {
-  width: 160px;
-  height: 160px;
+  width:  clamp(120px, 42vw, 160px);
+  height: clamp(120px, 42vw, 160px);
   border-radius: 50%;
   border: 3px solid var(--primary);
   background: var(--primary-dim);
   color: #FFFFFF;
-  font-size: 15px;
+  font-size: var(--fs-base);
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
@@ -240,6 +312,7 @@ body {
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .recreate-btn.pressing {
   background: var(--primary);
@@ -247,10 +320,10 @@ body {
   box-shadow: 0 0 40px rgba(95, 70, 255, 0.5);
 }
 .recreate-btn-icon {
-  font-size: 28px;
+  font-size: clamp(22px, 6vw, 28px);
 }
 .recreate-btn-label {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   opacity: 0.7;
 }
 
@@ -303,7 +376,7 @@ body {
 
 /* ─── 점수 표시 ─── */
 .score-display {
-  font-size: 64px;
+  font-size: var(--fs-score);
   font-weight: 700;
   letter-spacing: -2px;
   line-height: 1;
@@ -313,7 +386,7 @@ body {
   background-clip: text;
 }
 .score-max {
-  font-size: 22px;
+  font-size: clamp(16px, 5vw, 22px);
   font-weight: 400;
   color: rgba(255, 255, 255, 0.35);
   -webkit-text-fill-color: rgba(255, 255, 255, 0.35);
@@ -324,7 +397,7 @@ body {
 .round-scores-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
+  gap: clamp(6px, 1.5vw, 8px);
   width: 100%;
 }
 .round-score-cell {
@@ -333,25 +406,25 @@ body {
   align-items: center;
   gap: 4px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 12px 4px;
+  border-radius: 10px;
+  padding: clamp(8px, 2.5vw, 12px) 4px;
   opacity: 0;
   animation: fadeUp 0.4s ease forwards;
 }
 .round-score-num {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: rgba(255, 255, 255, 0.35);
   font-weight: 600;
 }
 .round-score-val {
-  font-size: 15px;
+  font-size: clamp(13px, 3.5vw, 15px);
   font-weight: 700;
   color: #FFFFFF;
 }
 
 /* ─── 카운트다운 숫자 ─── */
 .countdown-number {
-  font-size: 120px;
+  font-size: var(--fs-3xl);
   font-weight: 700;
   letter-spacing: -4px;
   line-height: 1;

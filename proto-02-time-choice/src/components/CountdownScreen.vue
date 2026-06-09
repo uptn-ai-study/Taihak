@@ -22,11 +22,13 @@ const store = useGameStore()
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: clamp(12px, 3vw, 16px);
+  /* 땅르는 화면도 캐치 (iOS pull-to-refresh 방지) */
+  overscroll-behavior: none;
 }
 
 .countdown-hint {
-  font-size: 14px;
+  font-size: var(--fs-sm);
   color: rgba(255, 255, 255, 0.3);
   font-weight: 500;
   letter-spacing: 0.5px;

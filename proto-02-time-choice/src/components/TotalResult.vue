@@ -85,21 +85,22 @@ function onShare() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 24px;
-  padding: 28px 24px;
+  gap: clamp(16px, 4.5vw, 24px);
+  padding: clamp(20px, 5vw, 28px) clamp(16px, 4.5vw, 24px);
   overflow-y: auto;
+  overscroll-behavior: none;
 }
 
 .tr-header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: clamp(6px, 2vw, 10px);
   width: 100%;
 }
 
 .tr-label {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.35);
   letter-spacing: 1px;
@@ -113,7 +114,7 @@ function onShare() {
 }
 
 .tr-message {
-  font-size: 16px;
+  font-size: var(--fs-base);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.7);
   letter-spacing: -0.2px;
@@ -122,7 +123,16 @@ function onShare() {
 
 .tr-actions {
   display: flex;
-  gap: 10px;
+  gap: clamp(8px, 2vw, 10px);
   width: 100%;
+}
+
+/* ── 소형 화면 ── */
+@media (max-height: 600px) {
+  .total-result-screen {
+    justify-content: flex-start;
+    gap: 12px;
+    padding-top: clamp(10px, 3vh, 20px);
+  }
 }
 </style>

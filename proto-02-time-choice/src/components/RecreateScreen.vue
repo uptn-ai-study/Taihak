@@ -10,6 +10,12 @@
     </div>
 
     <div class="canvas-wrap" ref="wrapRef">
+      <!-- 이쿨라이저 바로 위 타이틀 -->
+      <div class="eq-info">
+        <h2 class="eq-info-title">내 기록</h2>
+        <p class="eq-info-guide">누르면 시작 — 눥 때 시간이 저장돼요</p>
+      </div>
+
       <canvas ref="canvasRef" class="waveform-canvas" />
 
       <!-- 중앙 안내 오버레이 (누르기 전에만 표시) -->
@@ -19,16 +25,17 @@
           <span class="guide-text">누르세요</span>
         </div>
       </Transition>
-    </div>
 
-    <p class="recreate-hint">
-      <template v-if="!isPressing && !isSubmitted">
-        버튼을 누르면 타이머가 시작돼요
-      </template>
-      <template v-else-if="isPressing">
-        목표 시간이 됐다고 생각하면 손을 떼세요
-      </template>
-    </p>
+      <!-- 힙트: 이쿨라이저 아래 -->
+      <p class="recreate-hint">
+        <template v-if="!isPressing && !isSubmitted">
+          버튼을 누르면 타이머가 시작돼요
+        </template>
+        <template v-else-if="isPressing">
+          목표 시간이 됨다고 생각하면 손을 때세요
+        </template>
+      </p>
+    </div>
   </div>
 </template>
 
@@ -86,10 +93,11 @@ function 렌더링루프(현재시각: number) {
 
   if (isPressing.value && !isSubmitted.value) {
     if (마지막시각 === 0) 마지막시각 = 현재시각
-    const dtMs = 현재시각 - 마지막시각
+    let dtMs = 현재시각 - 마지막시각
+    if (dtMs < 0) dtMs = 0
     마지막시각 = 현재시각
 
-    const 경과ms = 현재시각 - pressStart
+    const 경과ms = Math.max(0, 현재시각 - pressStart)
     // 누르고 있는 동안: 물리 모션 업데이트 및 실시간 렌더링 (플레이어 테마)
     updateEqualizerState(eqState, 경과ms, dtMs, recreateSeed)
     ctx.clearRect(0, 0, logicalWidth, logicalHeight)
@@ -107,8 +115,10 @@ function 누름시작(e: PointerEvent) {
   if (isSubmitted.value || isPressing.value) return
   
   // 포인터 캡처링 설정 (전체 윈도우에서의 이탈 방어)
+  // e.target이 아닌 리스너가 걸린 컨테이너(e.currentTarget)를 대상으로 캡처를 수행하여,
+  // 터치 시작 시 사라지는 내부 가이드 노드 제거 시 발생할 수 있는 캡처 끊김 및 렌더링 튐 방지
   try {
-    const target = e.target as HTMLElement
+    const target = e.currentTarget as HTMLElement
     if (target && typeof target.setPointerCapture === 'function') {
       target.setPointerCapture(e.pointerId)
     }
@@ -165,8 +175,11 @@ function 전역누름종료() {
 }
 
 onMounted(() => {
-  캔버스초기화()
-  animId = requestAnimationFrame(렌더링루프)
+  // 브라우저가 첫 스타일과 레이아웃 계산을 마친 후에 크기를 정확히 측정하고 초기화하도록 보장하여 깜박임 방지
+  requestAnimationFrame(() => {
+    캔버스초기화()
+    animId = requestAnimationFrame(렌더링루프)
+  })
 })
 
 onUnmounted(() => {
@@ -183,16 +196,17 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   background: #000000;
-  padding: 16px 0 28px;
+  padding: clamp(12px, 3vw, 16px) 0 clamp(20px, 5vw, 28px);
   cursor: pointer;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  overscroll-behavior: none;
 }
 
 .recreate-header {
   width: 100%;
-  padding: 0 20px;
+  padding: 0 clamp(16px, 4vw, 20px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -200,7 +214,7 @@ onUnmounted(() => {
 }
 
 .phase-tag {
-  font-size: 11px;
+  font-size: clamp(10px, 2.5vw, 11px);
   font-weight: 700;
   letter-spacing: 2px;
   color: rgba(255, 255, 255, 0.3);
@@ -211,48 +225,56 @@ onUnmounted(() => {
   width: 100%;
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0 16px;
+  padding: 0 clamp(12px, 3vw, 16px);
+  min-height: 0;
+  gap: clamp(12px, 3vh, 20px);
 }
 
 .waveform-canvas {
   display: block;
 }
 
-/* 중앙 안내 */
+/* 하단 가이드: 캔버스 영역 하단 25% 지점에 고정 */
 .center-guide {
   position: absolute;
+  /* 이쿨라이저는 캔버스 중앙 부근에 그려지므로,
+     가이드는 캔버스 wrap의 아래슪에 위치시켰 */
+  bottom: clamp(16px, 6%, 32px);
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: clamp(10px, 3vw, 14px);
   pointer-events: none;
 }
 
 .guide-ring {
-  width: 64px;
-  height: 64px;
+  width: clamp(48px, 14vw, 64px);
+  height: clamp(48px, 14vw, 64px);
   border-radius: 50%;
   border: 1.5px solid rgba(255, 255, 255, 0.2);
   animation: guidePulse 2.2s ease-in-out infinite;
 }
 
 .guide-text {
-  font-size: 13px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   letter-spacing: 1px;
   color: rgba(255, 255, 255, 0.35);
 }
 
 .recreate-hint {
-  padding: 0 20px;
-  font-size: 13px;
+  padding: 0 clamp(16px, 4vw, 20px);
+  font-size: var(--fs-xs);
   font-weight: 400;
   color: rgba(255, 255, 255, 0.25);
   letter-spacing: -0.2px;
   text-align: center;
-  margin-top: 16px;
+  margin-top: clamp(12px, 3vw, 16px);
   min-height: 20px;
 }
 
@@ -263,5 +285,55 @@ onUnmounted(() => {
 @keyframes guidePulse {
   0%, 100% { transform: scale(1);   opacity: 0.5; }
   50%       { transform: scale(1.3); opacity: 0.15; }
+}
+
+/* ── 낙�섰세이프 모바일: 힉트를 숨겨서 캐린버스를 최대화 ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .recreate-hint {
+    display: none;
+  }
+  .recreate-header {
+    margin-bottom: 4px;
+  }
+}
+
+/* ── 소형 화면 ── */
+@media (max-height: 600px) {
+  .recreate-screen {
+    padding-bottom: clamp(12px, 3vh, 20px);
+  }
+}
+/* 이쿨라이저 바로 위 타이틀+가이드 (WatchScreen과 동일) */
+.eq-info {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: clamp(6px, 1.5vh, 10px);
+}
+
+.eq-info-title {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: #FFFFFF;
+  line-height: 1;
+  margin: 0;
+}
+
+.eq-info-guide {
+  font-size: var(--fs-sm);
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* ── 소형 화면 ── */
+@media (max-height: 600px) {
+  .canvas-wrap { gap: 8px; }
+  .eq-info-title { font-size: var(--fs-xl); }
 }
 </style>

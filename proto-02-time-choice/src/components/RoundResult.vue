@@ -1,33 +1,68 @@
 <template>
   <div class="round-result-screen" v-if="store.currentRoundResult">
-    <span class="round-indicator">{{ store.currentRound }} / {{ TOTAL_ROUNDS }}</span>
 
-    <!-- 병렬 파동 비교 캔버스 -->
-    <div class="canvas-wrap" ref="wrapRef">
-      <canvas ref="canvasRef" class="spiral-canvas" />
-      <!-- 점수 오버레이 -->
-      <div class="score-overlay">
+    <!-- 라운드 진행 배지 -->
+    <div class="round-badge">
+      <span class="round-badge-label">ROUND</span>
+      <span class="round-badge-num">{{ store.currentRound }}</span>
+      <span class="round-badge-sep">/</span>
+      <span class="round-badge-total">{{ TOTAL_ROUNDS }}</span>
+      <div class="round-dots">
+        <span
+          v-for="n in TOTAL_ROUNDS"
+          :key="n"
+          class="round-dot"
+          :class="{
+            'dot-done':    n < store.currentRound,
+            'dot-current': n === store.currentRound,
+            'dot-future':  n > store.currentRound,
+          }"
+        />
+      </div>
+    </div>
+
+    <!-- 점수 카드 -->
+    <div class="score-card">
+      <p class="score-card-label">이번 점수</p>
+      <div class="score-card-value">
         <span class="score-num">{{ result.score.toFixed(1) }}</span>
         <span class="score-max">/ 10</span>
       </div>
+      <p class="delta-label" :class="deltaClass">{{ deltaLabel }}</p>
     </div>
 
-    <!-- 시간 비교 정보 -->
-    <div class="time-compare">
-      <div class="time-row ghost">
-        <span class="time-dot" />
-        <span class="time-label">목표</span>
-        <span class="time-value">{{ (result.targetMs / 1000).toFixed(2) }}s</span>
+    <!-- 시간 비교 카드 -->
+    <div class="compare-card">
+      <!-- 목표 시간 행 -->
+      <div class="compare-row">
+        <div class="compare-row-header">
+          <span class="compare-dot ghost-dot"></span>
+          <span class="compare-row-label">목표</span>
+          <span class="compare-row-value ghost-value">{{ (result.targetMs / 1000).toFixed(2) }}s</span>
+        </div>
+        <div class="compare-bar-track">
+          <div
+            class="compare-bar-fill ghost-fill"
+            :style="{ width: targetBarWidth }"
+          ></div>
+        </div>
       </div>
-      <div class="time-row player">
-        <span class="time-dot" />
-        <span class="time-label">내 기록</span>
-        <span class="time-value">{{ (result.playerMs / 1000).toFixed(2) }}s</span>
+
+      <!-- 내 기록 행 -->
+      <div class="compare-row">
+        <div class="compare-row-header">
+          <span class="compare-dot player-dot"></span>
+          <span class="compare-row-label">내 기록</span>
+          <span class="compare-row-value player-value">{{ (result.playerMs / 1000).toFixed(2) }}s</span>
+        </div>
+        <div class="compare-bar-track">
+          <div
+            class="compare-bar-fill player-fill"
+            :style="{ width: playerBarWidth }"
+          ></div>
+        </div>
       </div>
     </div>
-
-    <!-- 오차 메시지 -->
-    <p class="delta-label" :class="deltaClass">{{ deltaLabel }}</p>
 
     <!-- 다음 버튼 -->
     <button class="btn-primary" @click="store.nextRound()">
@@ -37,46 +72,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { computed } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import { TOTAL_ROUNDS } from '../types/game'
-import { createEqualizerState, updateEqualizerState, drawBarEqualizer } from '../utils/wave'
 
 const store = useGameStore()
-// result가 null일 경우 템플릿의 프로퍼티 접근 크래시를 예방하기 위한 디폴트 객체 폴백 적용
 const result = computed(() => store.currentRoundResult || { score: 0, targetMs: 0, playerMs: 0 })
 const isLast = computed(() => store.currentRound >= TOTAL_ROUNDS)
 
-const wrapRef   = ref<HTMLDivElement | null>(null)
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-
-let ctx: CanvasRenderingContext2D | null = null
-let logicalWidth = 320
-let logicalHeight = 160
-let animId = 0
-let 시작시각 = 0
-let 마지막시각 = 0
-
-// 상단(목표) 및 하단(플레이어) 세그먼트 이퀄라이저 상태
-const targetEqState = createEqualizerState(24)
-const playerEqState = createEqualizerState(24)
-
-// 결과 화면 고정 시드값 (움직임 결이 일정하도록 상수로 제어)
-const targetSeed = 111
-const playerSeed = 888
-
-// 두 시간 중 더 긴 쪽을 기준으로 하되, 최소 4초(4000ms) 가이드로 횡단 기준선 확보
-const maxMs = computed(() => {
-  return Math.max(result.value.targetMs, result.value.playerMs, 4000)
-})
-
-const targetProgress = computed(() => result.value.targetMs / maxMs.value)
-const playerProgress = computed(() => result.value.playerMs / maxMs.value)
-
-// 오차 레이블
-const deltaMs = computed(() => {
-  return result.value.playerMs - result.value.targetMs
-})
+// 오차 계산
+const deltaMs = computed(() => result.value.playerMs - result.value.targetMs)
 const deltaLabel = computed(() => {
   const ms = Math.abs(deltaMs.value)
   if (ms < 80) return '거의 완벽해요! 🎯'
@@ -90,91 +95,16 @@ const deltaClass = computed(() => {
   return 'delta-miss'
 })
 
-function 캔버스초기화() {
-  const canvas = canvasRef.value
-  const wrap   = wrapRef.value
-  if (!canvas || !wrap) return
-
-  const dpr  = window.devicePixelRatio || 1
-  logicalWidth = wrap.clientWidth
-  logicalHeight = Math.min(wrap.clientHeight, 180) // 세로 높이 180px 제한
-
-  canvas.width  = logicalWidth * dpr
-  canvas.height = logicalHeight * dpr
-  canvas.style.width  = logicalWidth + 'px'
-  canvas.style.height = logicalHeight + 'px'
-
-  ctx = canvas.getContext('2d')
-  ctx?.scale(dpr, dpr)
-}
-
-function 렌더링루프(현재시각: number) {
-  if (!ctx) return
-
-  if (시작시각 === 0) 시작시각 = 현재시각
-  if (마지막시각 === 0) 마지막시각 = 현재시각
-  const dtMs = 현재시각 - 마지막시각
-  마지막시각 = 현재시각
-
-  const 경과ms = 현재시각 - 시작시각
-
-  // 물리 시뮬레이션 상태 업데이트
-  updateEqualizerState(targetEqState, 경과ms, dtMs, targetSeed)
-  updateEqualizerState(playerEqState, 경과ms, dtMs, playerSeed)
-
-  ctx.clearRect(0, 0, logicalWidth, logicalHeight)
-
-  // 상단 채널: 목표 시간 (자홍색/분홍색 Ghost 세그먼트, targetProgress 비례 렌더링)
-  drawBarEqualizer(ctx, 0, 0, logicalWidth, logicalHeight * 0.46, targetEqState, {
-    isGhost: true,
-    progressLimit: targetProgress.value
-  })
-
-  // 하단 채널: 플레이어 기록 (청록색/보라색 active 세그먼트, playerProgress 비례 렌더링)
-  drawBarEqualizer(ctx, 0, logicalHeight * 0.54, logicalWidth, logicalHeight * 0.46, playerEqState, {
-    isGhost: false,
-    progressLimit: playerProgress.value
-  })
-
-  // ── 두 이퀄라이저 사이의 아주 희미한 경계선 ──
-  ctx.save()
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)'
-  ctx.lineWidth = 1
-  ctx.beginPath()
-  ctx.moveTo(0, logicalHeight * 0.5)
-  ctx.lineTo(logicalWidth, logicalHeight * 0.5)
-  ctx.stroke()
-  ctx.restore()
-
-  animId = requestAnimationFrame(렌더링루프)
-}
-
-// 캔버스 엘리먼트 로드 및 데이터 로드 시점 감시
-watch(
-  [() => store.currentRoundResult, canvasRef],
-  ([res, canvas]) => {
-    if (res && canvas) {
-      nextTick(() => {
-        캔버스초기화()
-        cancelAnimationFrame(animId)
-        시작시각 = 0
-        마지막시각 = 0
-        animId = requestAnimationFrame(렌더링루프)
-      })
-    }
-  },
-  { immediate: true }
+// 비교 바: 긴 쪽을 100% 기준으로 비율 계산
+const maxMs = computed(() =>
+  Math.max(result.value.targetMs, result.value.playerMs, 1)
 )
-
-onMounted(() => {
-  nextTick(() => {
-    캔버스초기화()
-  })
-})
-
-onUnmounted(() => {
-  cancelAnimationFrame(animId)
-})
+const targetBarWidth = computed(() =>
+  `${(result.value.targetMs / maxMs.value) * 100}%`
+)
+const playerBarWidth = computed(() =>
+  `${(result.value.playerMs / maxMs.value) * 100}%`
+)
 </script>
 
 <style scoped>
@@ -184,41 +114,43 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  padding: 24px 20px;
+  gap: clamp(16px, 4vh, 28px);
+  padding: clamp(20px, 5vw, 32px) clamp(16px, 4vw, 24px);
   background: #000000;
 }
 
-/* ── 캔버스 ── */
-.canvas-wrap {
-  position: relative;
+/* ── 점수 카드 ── */
+.score-card {
   width: 100%;
-  height: 180px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 0 16px;
+  gap: clamp(6px, 1.5vh, 10px);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: clamp(20px, 5vw, 28px) clamp(16px, 4vw, 24px);
+  animation: fadeUp 0.4s ease both;
 }
 
-.spiral-canvas {
-  display: block;
+.score-card-label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
-/* 점수를 오른쪽 상단에 오버레이 */
-.score-overlay {
-  position: absolute;
-  top: -12px;
-  right: 16px;
+.score-card-value {
   display: flex;
   align-items: baseline;
-  gap: 4px;
-  pointer-events: none;
+  gap: 8px;
 }
 
 .score-num {
-  font-size: 36px;
+  font-size: clamp(52px, 16vw, 72px);
   font-weight: 700;
-  letter-spacing: -1px;
+  letter-spacing: -2px;
   line-height: 1;
   background: linear-gradient(135deg, #FFFFFF 0%, #C4B5FD 100%);
   -webkit-background-clip: text;
@@ -227,60 +159,14 @@ onUnmounted(() => {
 }
 
 .score-max {
-  font-size: 14px;
+  font-size: clamp(18px, 5vw, 24px);
   font-weight: 400;
   color: rgba(255, 255, 255, 0.3);
 }
 
-/* ── 시간 비교 ── */
-.time-compare {
-  display: flex;
-  gap: 24px;
-}
-
-.time-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.time-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.time-row.ghost .time-dot {
-  background: rgba(255, 120, 200, 0.65);
-}
-
-.time-row.player .time-dot {
-  background: #00f0ff;
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.7);
-}
-
-.time-label {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
-  font-weight: 500;
-}
-
-.time-value {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  color: #FFFFFF;
-}
-
-.time-row.ghost .time-value {
-  color: rgba(255, 180, 220, 0.85);
-  font-size: 16px;
-}
-
-/* ── 오차 ── */
+/* ── 오차 레이블 ── */
 .delta-label {
-  font-size: 14px;
+  font-size: var(--fs-base);
   font-weight: 600;
   letter-spacing: -0.2px;
 }
@@ -288,9 +174,188 @@ onUnmounted(() => {
 .delta-good  { color: #F59E0B; }
 .delta-miss  { color: rgba(255, 255, 255, 0.4); }
 
+/* ── 시간 비교 카드 ── */
+.compare-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 3vh, 18px);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: clamp(16px, 4vw, 24px);
+  animation: fadeUp 0.4s ease 0.1s both;
+}
+
+.compare-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.compare-row-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compare-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ghost-dot {
+  background: rgba(255, 120, 200, 0.8);
+  box-shadow: 0 0 6px rgba(255, 120, 200, 0.5);
+}
+
+.player-dot {
+  background: #00f0ff;
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.6);
+}
+
+.compare-row-label {
+  font-size: var(--fs-sm);
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 500;
+  flex: 1;
+}
+
+.compare-row-value {
+  font-size: clamp(16px, 4.5vw, 20px);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.ghost-value  { color: rgba(255, 180, 220, 0.9); }
+.player-value { color: #FFFFFF; }
+
+/* 바 트랙 */
+.compare-bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.compare-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  /* 마운트 시 0→실제 너비로 애니메이션 */
+  transition: width 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ghost-fill {
+  background: linear-gradient(90deg, rgba(255, 120, 200, 0.4), rgba(255, 120, 200, 0.8));
+}
+
+.player-fill {
+  background: linear-gradient(90deg, var(--primary), #00f0ff);
+}
+
 /* ── 버튼 ── */
 .btn-primary {
   width: 100%;
-  margin-top: 4px;
+  animation: fadeUp 0.4s ease 0.2s both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 소형 화면 ── */
+@media (max-height: 600px) {
+  .round-result-screen {
+    justify-content: flex-start;
+    gap: 10px;
+    padding-top: clamp(10px, 3vh, 16px);
+  }
+  .score-card {
+    padding: 14px 16px;
+  }
+  .compare-card {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .compare-row-value {
+    font-size: 15px;
+  }
+}
+/* ── 라운드 배지 ── */
+.round-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  padding: 8px 16px;
+  animation: fadeUp 0.3s ease both;
+}
+
+.round-badge-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+}
+
+.round-badge-num {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary-light);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.round-badge-sep {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.2);
+  font-weight: 400;
+}
+
+.round-badge-total {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: -0.3px;
+}
+
+.round-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 6px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.round-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dot-done {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.dot-current {
+  background: var(--primary);
+  box-shadow: 0 0 8px rgba(95, 70, 255, 0.7);
+  transform: scale(1.2);
+}
+
+.dot-future {
+  background: rgba(255, 255, 255, 0.12);
 }
 </style>

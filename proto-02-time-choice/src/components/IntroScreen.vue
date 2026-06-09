@@ -30,20 +30,30 @@
       <!-- 난이도 선택 -->
       <div class="intro-section">
         <p class="intro-section-label">난이도</p>
-        <div class="difficulty-pills">
+        <div class="difficulty-cards">
           <button
-            class="pill"
-            :class="{ active: store.difficulty === 'easy' }"
+            class="diff-card"
+            :class="{ selected: store.difficulty === 'easy' }"
             @click="store.setDifficulty('easy')"
           >
-            🌙 Easy
+            <span class="diff-card-icon">🌙</span>
+            <span class="diff-card-body">
+              <span class="diff-card-name">Easy</span>
+              <span class="diff-card-desc">1~5초 범위 · 처음 해보는 분께 추천</span>
+            </span>
+            <span class="diff-card-check" v-if="store.difficulty === 'easy'">&#10003;</span>
           </button>
           <button
-            class="pill"
-            :class="{ active: store.difficulty === 'hard' }"
+            class="diff-card"
+            :class="{ selected: store.difficulty === 'hard' }"
             @click="store.setDifficulty('hard')"
           >
-            ⚡ Hard
+            <span class="diff-card-icon">⚡</span>
+            <span class="diff-card-body">
+              <span class="diff-card-name">Hard</span>
+              <span class="diff-card-desc">2~10초 범위 · 감각을 믿어야 해요</span>
+            </span>
+            <span class="diff-card-check" v-if="store.difficulty === 'hard'">&#10003;</span>
           </button>
         </div>
       </div>
@@ -83,8 +93,9 @@ function 캔버스초기화() {
   if (!canvas || !wrap) return
 
   const dpr  = window.devicePixelRatio || 1
-  logicalWidth = wrap.clientWidth || 240
-  logicalHeight = 180
+  logicalWidth  = wrap.clientWidth || 240
+  // CSS에서 실제 렌더된 높이를 읽어 반응형 캔버스 크기 설정
+  logicalHeight = wrap.clientHeight || 180
 
   canvas.width  = logicalWidth * dpr
   canvas.height = logicalHeight * dpr
@@ -147,32 +158,40 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
+/* ─── 콘텐츠 컨테이너 ───
+   gap을 제거하고 각 자식에 margin-bottom을 개별 부여.
+   이렇게 해야 요소 쌍마다 다른 간격을 해상도별로 제어할 수 있다. */
 .intro-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px 24px;
-  gap: 20px;
+  padding: clamp(20px, 5vw, 32px) clamp(16px, 5vw, 24px);
   position: relative;
   z-index: 1;
 }
 
+/* ─── 비주얼 (이퀄라이저 캔버스) ───
+   가장 큰 비주얼 요소이므로 아래 여백을 타이틀보다 넉넉하게 */
 .intro-visual {
   width: 100%;
   max-width: 240px;
-  height: 180px;
+  height: clamp(120px, 25vh, 180px);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 8px;
+  /* 비주얼 → 타이틀 간격: 기존(20px) 대비 2/3 수준으로 축소 */
+  margin-bottom: 4px;
+  flex-shrink: 0;
 }
 
 .equalizer-canvas {
   display: block;
 }
 
+/* ─── 타이틀 ───
+   서브라인과의 gap은 내부에서 처리 (6px 고정) */
 .intro-title {
   display: flex;
   flex-direction: column;
@@ -180,17 +199,19 @@ onUnmounted(() => {
   gap: 6px;
   line-height: 1;
   text-align: center;
+  /* 타이틀 → 설명 간격: 타이틀은 큰 요소라 설명과 거리감 확보 */
+  margin-bottom: clamp(6px, 2vh, 14px);
 }
 
 .title-line-1 {
-  font-size: 46px;
+  font-size: var(--fs-2xl);
   font-weight: 800;
   letter-spacing: -1px;
   color: #FFFFFF;
 }
 
 .title-line-2 {
-  font-size: 13px;
+  font-size: clamp(11px, 3vw, 13px);
   font-weight: 700;
   letter-spacing: 2.5px;
   color: rgba(255, 255, 255, 0.45);
@@ -203,30 +224,205 @@ onUnmounted(() => {
   font-weight: 800;
 }
 
+/* ─── 설명 텍스트 ───
+   설명은 난이도 섹션과 시각적으로 연결되지 않도록 충분한 간격 */
 .intro-desc {
-  font-size: 15px;
+  font-size: var(--fs-sm);
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.55);
   text-align: center;
   letter-spacing: -0.2px;
+  /* 설명 → 난이도 간격: 섹션이 시작된다는 신호로 타이틀보다 넓게 */
+  margin-bottom: clamp(10px, 3.5vh, 24px);
 }
 
+/* ─── 난이도 섹션 ───
+   레이블 + 필 버튼을 하나의 블록으로 묶고,
+   아래 시작 버튼과의 간격은 좁게 (버튼이 연속 액션이므로) */
 .intro-section {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: clamp(10px, 2.5vw, 14px);
+  /* 난이도 → 시작버튼 간격: CTA와 가깝게 */
+  margin-bottom: clamp(8px, 2.5vh, 16px);
+}
+
+/* ─── 카드형 난이도 선택 UI ─── */
+.difficulty-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.diff-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: clamp(10px, 2.5vw, 14px) clamp(12px, 3vw, 16px);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.10);
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.diff-card:active {
+  transform: scale(0.98);
+}
+
+.diff-card.selected {
+  background: rgba(95, 70, 255, 0.12);
+  border-color: var(--primary);
+  box-shadow: 0 0 16px rgba(95, 70, 255, 0.25);
+}
+
+.diff-card-icon {
+  font-size: clamp(20px, 5vw, 24px);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.diff-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.diff-card-name {
+  font-size: var(--fs-base);
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+
+.diff-card.selected .diff-card-name {
+  color: var(--primary-light);
+}
+
+.diff-card-desc {
+  font-size: var(--fs-xs);
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.diff-card-check {
+  font-size: 14px;
+  color: var(--primary);
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 .intro-section-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.35);
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
+  font-size: var(--fs-base);   /* 기존 xs → base로 크게 */
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);  /* 기존 0.35 → 0.75로 선명하게 */
+  letter-spacing: -0.2px;
+  text-align: center;
+  /* 좌우에 짧은 선을 붙여 섹션 타이틀처럼 보이게 */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.intro-section-label::before,
+.intro-section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
 }
 
+/* ─── 시작 버튼: 마지막 요소이므로 margin 불필요 ─── */
 .btn-primary {
-  margin-top: 4px;
+  width: 100%;
+}
+
+
+/* ════════════════════════════════
+   브레이크포인트별 간격 조정
+   ════════════════════════════════ */
+
+/* ── 표준 모바일 (430~680px tall): 기본값 사용 ── */
+
+/* ── 짧은 화면 (높이 680px 이하): 전반적으로 여백 축소 ── */
+@media (max-height: 680px) {
+  .intro-visual {
+    height: clamp(100px, 22vh, 150px);
+    margin-bottom: clamp(4px, 1.3vh, 9px);
+  }
+  .intro-title {
+    margin-bottom: clamp(4px, 1.5vh, 10px);
+  }
+  .intro-desc {
+    margin-bottom: clamp(8px, 2.5vh, 16px);
+  }
+  .intro-section {
+    margin-bottom: clamp(6px, 2vh, 12px);
+  }
+}
+
+/* ── 소형 화면 (높이 600px 이하): 비주얼 최소화, 전체 justify를 위로 ── */
+@media (max-height: 600px) {
+  .intro-content {
+    justify-content: flex-start;
+    padding-top: clamp(12px, 4vh, 20px);
+  }
+  .intro-visual {
+    height: clamp(80px, 16vh, 110px);
+    margin-bottom: clamp(3px, 1vh, 7px);
+  }
+  .intro-title {
+    margin-bottom: clamp(2px, 1vh, 8px);
+    gap: 4px;
+  }
+  .intro-desc {
+    margin-bottom: clamp(6px, 2vh, 12px);
+  }
+  .intro-section {
+    margin-bottom: clamp(4px, 1.5vh, 10px);
+  }
+}
+
+/* ── 좁은 화면 (너비 360px 이하): 가로 패딩 & 비주얼 조절 ── */
+@media (max-width: 360px) {
+  .intro-content {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .intro-visual {
+    height: clamp(90px, 20vh, 120px);
+    max-width: 180px;
+  }
+}
+
+/* ── 랜드스케이프: 비주얼 최소화 & 타이틀/설명 inline 배치 ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .intro-content {
+    justify-content: flex-start;
+    padding-top: 10px;
+  }
+  .intro-visual {
+    height: clamp(60px, 12vh, 90px);
+    margin-bottom: 4px;
+  }
+  .intro-title {
+    margin-bottom: 4px;
+  }
+  .intro-desc {
+    margin-bottom: 8px;
+  }
+  .intro-section {
+    margin-bottom: 6px;
+  }
 }
 </style>
