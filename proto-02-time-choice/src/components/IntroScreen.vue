@@ -12,11 +12,6 @@
 
     <!-- 콘텐츠 -->
     <div class="intro-content">
-      <!-- 비주얼 이퀄라이저 -->
-      <div class="intro-visual" ref="wrapRef">
-        <canvas ref="canvasRef" class="equalizer-canvas" />
-      </div>
-
       <!-- 타이틀 & 설명 -->
       <h1 class="intro-title">
         <span class="title-line-1">TIME</span>
@@ -26,6 +21,11 @@
         화면에 나타나는 시간을 기억하고<br />
         그대로 재현해보세요.
       </p>
+
+      <!-- 비주얼 이퀄라이저 -->
+      <div class="intro-visual" ref="wrapRef">
+        <canvas ref="canvasRef" class="equalizer-canvas" />
+      </div>
 
       <!-- 난이도 선택 -->
       <div class="intro-section">
@@ -172,8 +172,7 @@ onUnmounted(() => {
   z-index: 1;
 }
 
-/* ─── 비주얼 (이퀄라이저 캔버스) ───
-   가장 큰 비주얼 요소이므로 아래 여백을 타이틀보다 넉넉하게 */
+/* ─── 비주얼 (이퀄라이저 캔버스) ─── */
 .intro-visual {
   width: 100%;
   max-width: 240px;
@@ -181,8 +180,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* 비주얼 → 타이틀 간격: 기존(20px) 대비 2/3 수준으로 축소 */
-  margin-bottom: 4px;
+  /* 비주얼 → 난이도 섹션 간격 */
+  margin-bottom: clamp(14px, 3.5vh, 24px);
   flex-shrink: 0;
 }
 
@@ -224,16 +223,15 @@ onUnmounted(() => {
   font-weight: 800;
 }
 
-/* ─── 설명 텍스트 ───
-   설명은 난이도 섹션과 시각적으로 연결되지 않도록 충분한 간격 */
+/* ─── 설명 텍스트 ─── */
 .intro-desc {
   font-size: var(--fs-sm);
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.55);
   text-align: center;
   letter-spacing: -0.2px;
-  /* 설명 → 난이도 간격: 섹션이 시작된다는 신호로 타이틀보다 넓게 */
-  margin-bottom: clamp(10px, 3.5vh, 24px);
+  /* 설명 → 비주얼 간격 */
+  margin-bottom: clamp(12px, 3vh, 20px);
 }
 
 /* ─── 난이도 섹션 ───
@@ -358,13 +356,13 @@ onUnmounted(() => {
 @media (max-height: 680px) {
   .intro-visual {
     height: clamp(100px, 22vh, 150px);
-    margin-bottom: clamp(4px, 1.3vh, 9px);
+    margin-bottom: clamp(10px, 2.5vh, 18px);
   }
   .intro-title {
     margin-bottom: clamp(4px, 1.5vh, 10px);
   }
   .intro-desc {
-    margin-bottom: clamp(8px, 2.5vh, 16px);
+    margin-bottom: clamp(8px, 2vh, 14px);
   }
   .intro-section {
     margin-bottom: clamp(6px, 2vh, 12px);
@@ -379,14 +377,14 @@ onUnmounted(() => {
   }
   .intro-visual {
     height: clamp(80px, 16vh, 110px);
-    margin-bottom: clamp(3px, 1vh, 7px);
+    margin-bottom: clamp(8px, 2vh, 14px);
   }
   .intro-title {
     margin-bottom: clamp(2px, 1vh, 8px);
     gap: 4px;
   }
   .intro-desc {
-    margin-bottom: clamp(6px, 2vh, 12px);
+    margin-bottom: clamp(6px, 1.5vh, 10px);
   }
   .intro-section {
     margin-bottom: clamp(4px, 1.5vh, 10px);
@@ -413,13 +411,13 @@ onUnmounted(() => {
   }
   .intro-visual {
     height: clamp(60px, 12vh, 90px);
-    margin-bottom: 4px;
+    margin-bottom: 6px;
   }
   .intro-title {
     margin-bottom: 4px;
   }
   .intro-desc {
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
   .intro-section {
     margin-bottom: 6px;

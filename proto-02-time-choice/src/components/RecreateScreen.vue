@@ -13,18 +13,19 @@
       <!-- 이쿨라이저 바로 위 타이틀 -->
       <div class="eq-info">
         <h2 class="eq-info-title">내 기록</h2>
-        <p class="eq-info-guide">누르면 시작 — 눥 때 시간이 저장돼요</p>
+        <p class="eq-info-guide">누르면 시작, 시간이 측정되요.</p>
       </div>
 
       <canvas ref="canvasRef" class="waveform-canvas" />
 
-      <!-- 중앙 안내 오버레이 (누르기 전에만 표시) -->
-      <Transition name="fade">
-        <div class="center-guide" v-if="!isPressing && !isSubmitted">
-          <div class="guide-ring" />
-          <span class="guide-text">누르세요</span>
-        </div>
-      </Transition>
+      <!-- 중앙 안내 오버레이 (DOM 제거 없이 클래스 바인딩으로 투명도만 제어하여 깜박임 원천 차단) -->
+      <div
+        class="center-guide"
+        :class="{ 'guide-hidden': isPressing || isSubmitted }"
+      >
+        <div class="guide-ring" />
+        <span class="guide-text">여기를 누르세요.</span>
+      </div>
 
       <!-- 힙트: 이쿨라이저 아래 -->
       <p class="recreate-hint">
@@ -114,18 +115,8 @@ function 렌더링루프(현재시각: number) {
 function 누름시작(e: PointerEvent) {
   if (isSubmitted.value || isPressing.value) return
   
-  // 포인터 캡처링 설정 (전체 윈도우에서의 이탈 방어)
-  // e.target이 아닌 리스너가 걸린 컨테이너(e.currentTarget)를 대상으로 캡처를 수행하여,
-  // 터치 시작 시 사라지는 내부 가이드 노드 제거 시 발생할 수 있는 캡처 끊김 및 렌더링 튐 방지
-  try {
-    const target = e.currentTarget as HTMLElement
-    if (target && typeof target.setPointerCapture === 'function') {
-      target.setPointerCapture(e.pointerId)
-    }
-  } catch (err) {
-    console.warn('Pointer capture not supported:', err)
-  }
-
+  // 윈도우 전역 리스너가 등록되어 마우스 이탈 시 릴리즈가 안전하게 감지되므로,
+  // 크롬 브라우저에서 GPU 가속 레이어 전환 및 화면 깜빡임을 유발할 수 있는 setPointerCapture API는 제거합니다.
   isPressing.value = true
   pressStart = performance.now()
   마지막시각 = pressStart
@@ -237,12 +228,11 @@ onUnmounted(() => {
   display: block;
 }
 
-/* 하단 가이드: 캔버스 영역 하단 25% 지점에 고정 */
+/* 하단 가이드: 캔버스 영역 중앙 부근으로 상향 고정 */
 .center-guide {
   position: absolute;
-  /* 이쿨라이저는 캔버스 중앙 부근에 그려지므로,
-     가이드는 캔버스 wrap의 아래슪에 위치시켰 */
-  bottom: clamp(16px, 6%, 32px);
+  /* 누름 전 상태에서 이퀄라이저와 조화롭게 배치하기 위해 bottom 상향 조정 */
+  bottom: clamp(60px, 20%, 90px);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -250,13 +240,23 @@ onUnmounted(() => {
   align-items: center;
   gap: clamp(10px, 3vw, 14px);
   pointer-events: none;
+  /* 부드러운 불투명도 및 크기 페이드 전환 효과 (DOM 파괴 깜빡임 해결) */
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  opacity: 1;
+}
+
+.center-guide.guide-hidden {
+  opacity: 0;
+  transform: translateX(-50%) scale(0.95);
 }
 
 .guide-ring {
   width: clamp(48px, 14vw, 64px);
   height: clamp(48px, 14vw, 64px);
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
   animation: guidePulse 2.2s ease-in-out infinite;
 }
 
@@ -264,7 +264,8 @@ onUnmounted(() => {
   font-size: var(--fs-sm);
   font-weight: 600;
   letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 5px;
 }
 
 .recreate-hint {
@@ -275,16 +276,16 @@ onUnmounted(() => {
   letter-spacing: -0.2px;
   text-align: center;
   margin-top: clamp(12px, 3vw, 16px);
-  min-height: 20px;
+  /* 텍스트가 한 줄에서 두 줄로 바뀌며 높이가 흔들려 생기는 리플로우 및 깜빡임 차단 */
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* 트랜지션 */
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-
 @keyframes guidePulse {
-  0%, 100% { transform: scale(1);   opacity: 0.5; }
-  50%       { transform: scale(1.3); opacity: 0.15; }
+  0%, 100% { transform: scale(1);   opacity: 0.85; }
+  50%       { transform: scale(1.2); opacity: 0.35; }
 }
 
 /* ── 낙�섰세이프 모바일: 힉트를 숨겨서 캐린버스를 최대화 ── */
