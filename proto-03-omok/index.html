@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>오목 챌린지</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/SUIT-Variable.min.css">
+  <style>
+    :root {
+      --primary:       #5F46FF;
+      --primary-dark:  #4A35E0;
+      --primary-light: #EEEAFF;
+      --primary-200:   #F2F0FF;
+      --primary-dim:   rgba(95,70,255,0.10);
+      --card-bg:       #FFFFFF;
+      --muted-bg:      #F5F5F8;
+      --border:        #E5E7EB;
+      --text-1:        #111827;
+      --text-2:        #6B7280;
+      --text-3:        #9CA3AF;
+      --success:       #10B981;
+      --error:         #EF4444;
+      --board-bg:      #DCA95A;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'SUIT Variable', 'SUIT', -apple-system, sans-serif;
+      background: var(--muted-bg);
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== SCREENS ===== */
+    .screen { display: none; flex-direction: column; min-height: 100dvh; }
+    .screen.active { display: flex; }
+
+    /* ===== PROFILE SCREEN ===== */
+    #screen-profile {
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px 40px;
+      gap: 28px;
+      background: var(--card-bg);
+    }
+    .profile-hero { text-align: center; }
+    .profile-logo { font-size: 72px; line-height: 1; display: block; margin-bottom: 16px; }
+    .profile-title { font-size: 28px; font-weight: 700; letter-spacing: -0.3px; color: var(--text-1); }
+    .profile-sub { font-size: 15px; color: var(--text-2); margin-top: 8px; line-height: 1.5; }
+
+    .profile-form { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+    .input-label { font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 4px; display: block; }
+    .input-field {
+      width: 100%; height: 52px; padding: 0 16px;
+      background: #FFFFFF; border: 1.5px solid var(--border);
+      border-radius: 12px; font-size: 15px; color: var(--text-1); outline: none;
+      font-family: inherit;
+    }
+    .input-field:focus { border: 2px solid var(--primary); }
+    .input-field::placeholder { color: var(--text-3); }
+    .input-error { font-size: 12px; color: var(--error); margin-top: 4px; display: none; }
+    .input-hint { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+
+    .btn-primary {
+      width: 100%; height: 56px;
+      background: var(--primary); color: #FFFFFF;
+      font-size: 16px; font-weight: 700; letter-spacing: -0.3px;
+      border-radius: 12px; border: none; cursor: pointer; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn-primary:active { background: var(--primary-dark); }
+    .profile-disclaimer { font-size: 12px; color: var(--text-3); text-align: center; }
+
+    /* ===== MAIN SCREEN ===== */
+    #screen-main { background: var(--muted-bg); }
+
+    /* Top Bar */
+    .top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .top-bar-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; color: var(--text-1); }
+    .top-bar-right { display: flex; align-items: center; gap: 8px; }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--primary-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: var(--primary);
+      flex-shrink: 0;
+    }
+    .nickname-chip { font-size: 14px; font-weight: 600; color: var(--text-1); }
+
+    /* Tab Bar */
+    .tab-bar {
+      display: flex; background: var(--card-bg);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .tab-item {
+      flex: 1; height: 46px; background: none; border: none;
+      font-size: 15px; font-weight: 400; color: var(--text-3);
+      cursor: pointer; position: relative; font-family: inherit;
+    }
+    .tab-item.active { font-weight: 700; color: var(--text-1); }
+    .tab-item.active::after {
+      content: ''; position: absolute; bottom: 0; left: 10%; right: 10%;
+      height: 2px; background: var(--text-1); border-radius: 2px 2px 0 0;
+    }
+
+    /* Tab Content */
+    .tab-content { display: none; flex: 1; flex-direction: column; overflow-y: auto; }
+    .tab-content.active { display: flex; }
+
+    /* Stage Progress */
+    .stage-header { padding: 12px 20px 4px; }
+    .stage-row {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+    }
+    .stage-label { font-size: 13px; font-weight: 600; color: var(--text-2); }
+    .stage-badge {
+      background: var(--primary); color: #fff;
+      font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 9999px;
+    }
+    .progress-track {
+      height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; background: var(--primary); border-radius: 2px;
+      transition: width 0.4s cubic-bezier(.32,1,.55,1);
+    }
+
+    /* Board Section */
+    .board-section {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 8px 12px;
+    }
+    #board-canvas {
+      border-radius: 8px;
+      display: block;
+      touch-action: none;
+      cursor: pointer;
+    }
+
+    /* Status Card */
+    .status-card {
+      margin: 4px 12px;
+      background: var(--card-bg); border-radius: 12px;
+      padding: 10px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .turn-info { display: flex; align-items: center; gap: 8px; }
+    .turn-stone {
+      width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+    }
+    .stone-black { background: #1a1a1a; }
+    .stone-white { background: #fff; border: 1.5px solid #bbb; }
+    .turn-label { font-size: 13px; font-weight: 600; color: var(--text-1); }
+
+    .score-row { display: flex; gap: 16px; }
+    .score-item { text-align: center; }
+    .score-num { font-size: 16px; font-weight: 700; color: var(--text-1); }
+    .score-label { font-size: 10px; color: var(--text-3); margin-top: 1px; }
+
+    /* Restart button */
+    .restart-wrap { padding: 8px 12px 16px; }
+    .btn-gray {
+      width: 100%; height: 44px;
+      background: var(--muted-bg); color: var(--text-2);
+      border: 1px solid var(--border); border-radius: 12px;
+      font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .btn-gray:active { background: var(--border); }
+
+    /* Thinking dots */
+    .dots span {
+      display: inline-block; width: 3px; height: 3px;
+      background: var(--text-3); border-radius: 50%; margin: 0 1px;
+      animation: blink 1.2s infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+    /* ===== RANKING TAB ===== */
+    .ranking-wrap { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .ranking-section-title {
+      font-size: 13px; font-weight: 600; color: var(--text-2);
+      padding: 4px 4px 8px;
+    }
+    .rank-card {
+      background: var(--card-bg); border-radius: 16px;
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .rank-card.me { border: 1.5px solid var(--primary); }
+    .rank-num { font-size: 16px; font-weight: 700; color: var(--text-3); width: 28px; text-align: center; flex-shrink: 0; }
+    .rank-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--primary-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 700; color: var(--primary); flex-shrink: 0;
+    }
+    .rank-info { flex: 1; min-width: 0; }
+    .rank-name { font-size: 15px; font-weight: 600; color: var(--text-1); }
+    .rank-sub { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+    .rank-score { text-align: right; flex-shrink: 0; }
+    .rank-wins { font-size: 16px; font-weight: 700; color: var(--primary); }
+    .rank-losses { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+    .empty-state {
+      display: flex; flex-direction: column;
+      align-items: center; padding: 48px 20px; gap: 10px;
+    }
+    .empty-icon { font-size: 48px; opacity: .35; }
+    .empty-text { font-size: 16px; font-weight: 700; color: var(--text-2); }
+    .empty-sub { font-size: 14px; color: var(--text-3); text-align: center; }
+
+    /* ===== BOTTOM SHEET ===== */
+    .bs-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.50);
+      display: flex; align-items: flex-end;
+      z-index: 200;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .bs-overlay.open { opacity: 1; pointer-events: all; }
+    .bs-sheet {
+      width: 100%; max-width: 480px; margin: 0 auto;
+      background: #FFFFFF; border-radius: 24px 24px 0 0;
+      padding: 12px 20px 40px;
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.10);
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      transform: translateY(100%);
+      transition: transform .3s cubic-bezier(.32,1,.55,1);
+    }
+    .bs-overlay.open .bs-sheet { transform: translateY(0); }
+    .bs-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; }
+    .bs-body { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+
+    .result-emoji { font-size: 64px; text-align: center; }
+    .result-title { font-size: 24px; font-weight: 700; color: var(--text-1); text-align: center; letter-spacing: -0.3px; }
+    .result-sub { font-size: 14px; color: var(--text-2); text-align: center; }
+
+    .result-stats { display: flex; gap: 10px; }
+    .result-stat {
+      flex: 1; background: var(--muted-bg); border-radius: 12px; padding: 14px 12px; text-align: center;
+    }
+    .result-stat-num { font-size: 22px; font-weight: 700; color: var(--text-1); }
+    .result-stat-label { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+    .btn-row { display: flex; gap: 10px; width: 100%; }
+    .btn-primary-md {
+      flex: 1; height: 48px;
+      background: var(--primary); color: #FFFFFF;
+      font-size: 15px; font-weight: 600; letter-spacing: -0.3px;
+      border-radius: 12px; border: none; cursor: pointer; font-family: inherit;
+    }
+    .btn-primary-md:active { background: var(--primary-dark); }
+    .btn-secondary {
+      flex: 1; height: 48px;
+      background: var(--primary-200); color: var(--primary);
+      font-size: 15px; font-weight: 700; letter-spacing: -0.3px;
+      border-radius: 12px; border: none; cursor: pointer; font-family: inherit;
+    }
+
+    /* Completion screen overlay */
+    .completion-banner {
+      background: linear-gradient(135deg, #5F46FF, #8B6FFF);
+      border-radius: 16px; padding: 20px;
+      color: #fff; text-align: center;
+    }
+    .completion-banner h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .completion-banner p { font-size: 14px; opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+<!-- ===== PROFILE SCREEN ===== -->
+<div id="screen-profile" class="screen">
+  <div class="profile-hero">
+    <span class="profile-logo">⚫</span>
+    <div class="profile-title">오목 챌린지</div>
+    <div class="profile-sub">20스테이지를 클리어하고<br>랭킹 1위에 도전하세요!</div>
+  </div>
+
+  <div class="profile-form">
+    <label class="input-label" for="input-nickname">닉네임</label>
+    <input type="text" id="input-nickname" class="input-field"
+           placeholder="닉네임을 입력하세요" maxlength="10" autocomplete="off">
+    <div class="input-error" id="nickname-error">닉네임은 3자 이상 입력해주세요</div>
+    <div class="input-hint">3~10자, 랭킹에 공개됩니다</div>
+  </div>
+
+  <button class="btn-primary" id="btn-start">게임 시작</button>
+  <div class="profile-disclaimer">기존 닉네임으로 입력하면 기록이 이어집니다</div>
+</div>
+
+<!-- ===== MAIN SCREEN ===== -->
+<div id="screen-main" class="screen">
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="top-bar-title">오목 챌린지</div>
+    <div class="top-bar-right">
+      <div class="avatar" id="top-avatar">?</div>
+      <span class="nickname-chip" id="top-nickname">-</span>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <button class="tab-item active" id="tab-game" onclick="switchTab('game')">게임</button>
+    <button class="tab-item" id="tab-ranking" onclick="switchTab('ranking')">랭킹</button>
+  </div>
+
+  <!-- GAME TAB -->
+  <div id="content-game" class="tab-content active">
+    <!-- Stage Progress -->
+    <div class="stage-header">
+      <div class="stage-row">
+        <span class="stage-label">난이도 진행</span>
+        <span class="stage-badge" id="stage-badge">스테이지 1</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill" style="width:5%"></div>
+      </div>
+    </div>
+
+    <!-- Board -->
+    <div class="board-section">
+      <canvas id="board-canvas"></canvas>
+    </div>
+
+    <!-- Status Card -->
+    <div class="status-card">
+      <div class="turn-info">
+        <div class="turn-stone stone-black" id="turn-stone"></div>
+        <span class="turn-label" id="turn-label">내 차례</span>
+      </div>
+      <div class="score-row">
+        <div class="score-item">
+          <div class="score-num" id="stat-wins">0</div>
+          <div class="score-label">승</div>
+        </div>
+        <div class="score-item">
+          <div class="score-num" id="stat-losses">0</div>
+          <div class="score-label">패</div>
+        </div>
+        <div class="score-item">
+          <div class="score-num" id="stat-maxstage">1</div>
+          <div class="score-label">최고</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Restart -->
+    <div class="restart-wrap">
+      <button class="btn-gray" id="btn-restart">↺ 다시 시작</button>
+    </div>
+  </div>
+
+  <!-- RANKING TAB -->
+  <div id="content-ranking" class="tab-content">
+    <div id="ranking-list" class="ranking-wrap"></div>
+  </div>
+
+</div>
+
+<!-- ===== RESULT BOTTOM SHEET ===== -->
+<div class="bs-overlay" id="result-bs">
+  <div class="bs-sheet">
+    <div class="bs-handle"></div>
+    <div class="bs-body">
+      <div class="result-emoji" id="result-emoji">🎉</div>
+      <div class="result-title" id="result-title">승리!</div>
+      <div class="result-sub" id="result-sub">스테이지 1 클리어!</div>
+
+      <div class="result-stats">
+        <div class="result-stat">
+          <div class="result-stat-num" id="res-stage">1</div>
+          <div class="result-stat-label">스테이지</div>
+        </div>
+        <div class="result-stat">
+          <div class="result-stat-num" id="res-wins">0</div>
+          <div class="result-stat-label">총 승리</div>
+        </div>
+        <div class="result-stat">
+          <div class="result-stat-num" id="res-maxstage">1</div>
+          <div class="result-stat-label">최고 스테이지</div>
+        </div>
+      </div>
+
+      <div id="completion-area"></div>
+
+      <div class="btn-row">
+        <button class="btn-secondary" id="btn-retry">다시 도전</button>
+        <button class="btn-primary-md" id="btn-next">다음 스테이지 →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== SUPABASE CONFIG =====
+// Vercel 환경 변수로 주입하거나 아래에 직접 입력
+const SUPABASE_URL = typeof __SUPABASE_URL__ !== 'undefined' ? __SUPABASE_URL__ : 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = typeof __SUPABASE_KEY__ !== 'undefined' ? __SUPABASE_KEY__ : 'YOUR_SUPABASE_ANON_KEY';
+const USE_SUPABASE = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
+
+const SB = {
+  headers() {
+    return {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    };
+  },
+  async upsert(table, row) {
+    if (!USE_SUPABASE) return null;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+        method: 'POST',
+        headers: { ...this.headers(), 'Prefer': 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify(row)
+      });
+      return await res.json();
+    } catch { return null; }
+  },
+  async select(table, query = '') {
+    if (!USE_SUPABASE) return null;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
+        headers: this.headers()
+      });
+      return await res.json();
+    } catch { return null; }
+  }
+};
+
+// ===== CONSTANTS =====
+const BOARD_SIZE = 15;
+const MAX_STAGE = 20;
+
+// ===== STATE =====
+let board = Array.from({length: BOARD_SIZE}, () => Array(BOARD_SIZE).fill(0));
+let currentStage = 1;
+let isPlayerTurn = true;
+let gameOver = false;
+let aiThinking = false;
+let wins = 0;
+let losses = 0;
+let maxStage = 1;
+let nickname = '';
+let lastMove = null;
+
+// ===== CANVAS =====
+const canvas = document.getElementById('board-canvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  const avail = Math.min(window.innerWidth, 480) - 24;
+  const size = Math.min(avail, 400);
+  canvas.width = size;
+  canvas.height = size;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+  drawBoard();
+}
+
+function cellSize() { return canvas.width / BOARD_SIZE; }
+
+function drawBoard() {
+  const cs = cellSize();
+  const half = cs / 2;
+
+  // Board background
+  ctx.fillStyle = '#C8943A';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(0, 0, canvas.width, canvas.height, 8);
+  else ctx.rect(0, 0, canvas.width, canvas.height);
+  ctx.fill();
+
+  ctx.fillStyle = '#DCA95A';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(2, 2, canvas.width - 4, canvas.height - 4, 6);
+  else ctx.rect(2, 2, canvas.width - 4, canvas.height - 4);
+  ctx.fill();
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(0,0,0,0.28)';
+  ctx.lineWidth = 0.7;
+  for (let i = 0; i < BOARD_SIZE; i++) {
+    const pos = cs * i + half;
+    ctx.beginPath(); ctx.moveTo(pos, half); ctx.lineTo(pos, canvas.height - half); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(half, pos); ctx.lineTo(canvas.width - half, pos); ctx.stroke();
+  }
+
+  // Star points
+  [[3,3],[3,11],[7,7],[11,3],[11,11]].forEach(([r,c]) => {
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.beginPath();
+    ctx.arc(cs*c + half, cs*r + half, cs*0.08, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  // Stones
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      if (board[r][c]) drawStone(r, c, board[r][c]);
+    }
+  }
+
+  // Last move indicator
+  if (lastMove) {
+    const x = cs * lastMove.c + half;
+    const y = cs * lastMove.r + half;
+    ctx.strokeStyle = '#EF4444';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(x, y, cs * 0.2, 0, Math.PI*2);
+    ctx.stroke();
+  }
+}
+
+function drawStone(r, c, player) {
+  const cs = cellSize();
+  const x = cs * c + cs/2;
+  const y = cs * r + cs/2;
+  const rad = cs * 0.43;
+
+  const g = ctx.createRadialGradient(x - rad*0.32, y - rad*0.32, rad*0.05, x, y, rad);
+  if (player === 1) {
+    g.addColorStop(0, '#5a5a5a');
+    g.addColorStop(1, '#101010');
+  } else {
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(1, '#cccccc');
+  }
+
+  ctx.shadowColor = 'rgba(0,0,0,0.35)';
+  ctx.shadowBlur = 4;
+  ctx.shadowOffsetX = 1;
+  ctx.shadowOffsetY = 2;
+
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, rad, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+
+  if (player === 2) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+}
+
+// ===== BOARD LOGIC =====
+function initBoard() {
+  board = Array.from({length: BOARD_SIZE}, () => Array(BOARD_SIZE).fill(0));
+  lastMove = null;
+  isPlayerTurn = true;
+  gameOver = false;
+  aiThinking = false;
+  updateUI();
+  drawBoard();
+}
+
+function checkWin(b, r, c, player) {
+  const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+  for (const [dr, dc] of dirs) {
+    let cnt = 1;
+    for (let d = 1; d < 5; d++) {
+      const nr = r+dr*d, nc = c+dc*d;
+      if (nr<0||nr>=BOARD_SIZE||nc<0||nc>=BOARD_SIZE||b[nr][nc]!==player) break;
+      cnt++;
+    }
+    for (let d = 1; d < 5; d++) {
+      const nr = r-dr*d, nc = c-dc*d;
+      if (nr<0||nr>=BOARD_SIZE||nc<0||nc>=BOARD_SIZE||b[nr][nc]!==player) break;
+      cnt++;
+    }
+    if (cnt >= 5) return true;
+  }
+  return false;
+}
+
+function isBoardFull() {
+  for (let r=0;r<BOARD_SIZE;r++) for (let c=0;c<BOARD_SIZE;c++) if (!board[r][c]) return false;
+  return true;
+}
+
+// ===== AI ENGINE =====
+// Threat scoring per pattern
+function lineScore(b, r, c, dr, dc, player) {
+  let cnt = 1, openA = 0, openB = 0;
+  for (let d=1;d<=4;d++) {
+    const nr=r+dr*d, nc=c+dc*d;
+    if (nr<0||nr>=BOARD_SIZE||nc<0||nc>=BOARD_SIZE||b[nr][nc]===3-player) break;
+    if (b[nr][nc]===0) { openA=1; break; }
+    cnt++;
+  }
+  for (let d=1;d<=4;d++) {
+    const nr=r-dr*d, nc=c-dc*d;
+    if (nr<0||nr>=BOARD_SIZE||nc<0||nc>=BOARD_SIZE||b[nr][nc]===3-player) break;
+    if (b[nr][nc]===0) { openB=1; break; }
+    cnt++;
+  }
+  const opens = openA + openB;
+  if (cnt >= 5) return 100000;
+  if (opens === 0) return 0;
+  const base = [0, 5, 50, 500, 5000][Math.min(cnt,4)];
+  return opens === 2 ? base * 2 : base;
+}
+
+function cellScore(b, r, c, player) {
+  const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+  return dirs.reduce((s,[dr,dc]) => s + lineScore(b,r,c,dr,dc,player), 0);
+}
+
+function hasNeighbor(b, r, c, dist=2) {
+  for (let dr=-dist;dr<=dist;dr++)
+    for (let dc=-dist;dc<=dist;dc++) {
+      const nr=r+dr, nc=c+dc;
+      if (nr>=0&&nr<BOARD_SIZE&&nc>=0&&nc<BOARD_SIZE&&b[nr][nc]) return true;
+    }
+  return false;
+}
+
+function emptyCells(b) {
+  const cells = [];
+  for (let r=0;r<BOARD_SIZE;r++) for (let c=0;c<BOARD_SIZE;c++) if (!b[r][c]) cells.push([r,c]);
+  return cells;
+}
+
+function candidateCells(b) {
+  const empty = emptyCells(b);
+  const total = BOARD_SIZE*BOARD_SIZE - empty.length;
+  if (total === 0) {
+    const mid = Math.floor(BOARD_SIZE/2);
+    return [[mid, mid]];
+  }
+  return empty.filter(([r,c]) => hasNeighbor(b,r,c,2));
+}
+
+// Minimax for high stages
+function minimax(b, depth, alpha, beta, maximizing) {
+  const cells = candidateCells(b);
+  if (depth === 0 || cells.length === 0) {
+    let score = 0;
+    for (let r=0;r<BOARD_SIZE;r++) for (let c=0;c<BOARD_SIZE;c++) {
+      if (b[r][c]===2) score += cellScore(b,r,c,2)*0.5;
+      else if (b[r][c]===1) score -= cellScore(b,r,c,1)*0.5;
+    }
+    return score;
+  }
+
+  if (maximizing) {
+    let best = -Infinity;
+    for (const [r,c] of cells) {
+      b[r][c] = 2;
+      if (checkWin(b,r,c,2)) { b[r][c]=0; return 900000; }
+      const val = minimax(b, depth-1, alpha, beta, false);
+      b[r][c] = 0;
+      best = Math.max(best, val);
+      alpha = Math.max(alpha, val);
+      if (beta <= alpha) break;
+    }
+    return best;
+  } else {
+    let best = Infinity;
+    for (const [r,c] of cells) {
+      b[r][c] = 1;
+      if (checkWin(b,r,c,1)) { b[r][c]=0; return -900000; }
+      const val = minimax(b, depth-1, alpha, beta, true);
+      b[r][c] = 0;
+      best = Math.min(best, val);
+      beta = Math.min(beta, val);
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+}
+
+function getAIMove(stage) {
+  const cells = candidateCells(board);
+  if (!cells.length) return null;
+
+  // Stage 1: fully random
+  if (stage === 1) return cells[Math.floor(Math.random() * cells.length)];
+
+  // Check immediate win
+  for (const [r,c] of cells) {
+    board[r][c] = 2;
+    const win = checkWin(board, r, c, 2);
+    board[r][c] = 0;
+    if (win) return [r, c];
+  }
+
+  // Check immediate block (stage 3+)
+  if (stage >= 3) {
+    for (const [r,c] of cells) {
+      board[r][c] = 1;
+      const playerWin = checkWin(board, r, c, 1);
+      board[r][c] = 0;
+      if (playerWin) return [r, c];
+    }
+  }
+
+  // Pure random for stage 2
+  if (stage === 2) return cells[Math.floor(Math.random() * cells.length)];
+
+  // Score-based for stage 3-12
+  // Minimax depth for stage 13+
+  const mmDepth = stage >= 18 ? 3 : stage >= 15 ? 2 : stage >= 13 ? 1 : 0;
+
+  if (mmDepth > 0) {
+    let best = -Infinity;
+    let bestCell = cells[0];
+    for (const [r,c] of cells) {
+      board[r][c] = 2;
+      const val = minimax(board, mmDepth, -Infinity, Infinity, false);
+      board[r][c] = 0;
+      if (val > best) { best = val; bestCell = [r, c]; }
+    }
+    return bestCell;
+  }
+
+  // Attack/defense weight grows with stage
+  const atkW = 0.3 + stage * 0.065;
+  const noise = Math.max(0, 0.6 - stage * 0.06);
+
+  let best = -Infinity;
+  let bestCells = [];
+
+  for (const [r,c] of cells) {
+    board[r][c] = 2;
+    const atk = cellScore(board, r, c, 2);
+    board[r][c] = 0;
+
+    board[r][c] = 1;
+    const def = cellScore(board, r, c, 1);
+    board[r][c] = 0;
+
+    let score = atk * atkW + def;
+    score += Math.random() * noise * 1000;
+
+    if (score > best) { best = score; bestCells = [[r,c]]; }
+    else if (score === best) bestCells.push([r,c]);
+  }
+
+  return bestCells[Math.floor(Math.random() * Math.min(bestCells.length, 3))];
+}
+
+// ===== EVENT HANDLERS =====
+function getBoardPos(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (clientX - rect.left) * scaleX;
+  const y = (clientY - rect.top) * scaleY;
+  const cs = cellSize();
+  return { r: Math.floor(y / cs), c: Math.floor(x / cs) };
+}
+
+function handlePlace(clientX, clientY) {
+  if (!isPlayerTurn || gameOver || aiThinking) return;
+  const { r, c } = getBoardPos(clientX, clientY);
+  if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) return;
+  if (board[r][c]) return;
+
+  place(r, c, 1);
+
+  if (checkWin(board, r, c, 1)) {
+    gameOver = true;
+    wins++;
+    maxStage = Math.max(maxStage, currentStage);
+    updateUI();
+    saveRecord();
+    setTimeout(() => showResult('win'), 400);
+    return;
+  }
+  if (isBoardFull()) {
+    gameOver = true;
+    setTimeout(() => showResult('draw'), 400);
+    return;
+  }
+
+  isPlayerTurn = false;
+  aiThinking = true;
+  updateUI();
+
+  const delay = 400 + stage_delay(currentStage);
+  setTimeout(runAI, delay);
+}
+
+function stage_delay(s) {
+  if (s <= 2) return 100;
+  if (s <= 8) return s * 30;
+  if (s <= 14) return 300 + s * 20;
+  return 600 + s * 30; // longer thinking for high stages
+}
+
+canvas.addEventListener('click', e => handlePlace(e.clientX, e.clientY));
+canvas.addEventListener('touchend', e => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  handlePlace(t.clientX, t.clientY);
+}, { passive: false });
+
+function place(r, c, player) {
+  board[r][c] = player;
+  lastMove = { r, c };
+  drawBoard();
+}
+
+function runAI() {
+  const move = getAIMove(currentStage);
+  aiThinking = false;
+  if (!move) { isPlayerTurn = true; updateUI(); return; }
+
+  const [r, c] = move;
+  place(r, c, 2);
+
+  if (checkWin(board, r, c, 2)) {
+    gameOver = true;
+    losses++;
+    updateUI();
+    saveRecord();
+    setTimeout(() => showResult('lose'), 400);
+    return;
+  }
+  if (isBoardFull()) {
+    gameOver = true;
+    setTimeout(() => showResult('draw'), 400);
+    return;
+  }
+
+  isPlayerTurn = true;
+  updateUI();
+}
+
+// ===== UI UPDATES =====
+function updateUI() {
+  document.getElementById('stat-wins').textContent = wins;
+  document.getElementById('stat-losses').textContent = losses;
+  document.getElementById('stat-maxstage').textContent = maxStage;
+  document.getElementById('stage-badge').textContent = `스테이지 ${currentStage}`;
+  document.getElementById('progress-fill').style.width = `${(currentStage / MAX_STAGE) * 100}%`;
+
+  const stone = document.getElementById('turn-stone');
+  const label = document.getElementById('turn-label');
+
+  if (gameOver) {
+    label.textContent = '게임 종료';
+  } else if (aiThinking) {
+    stone.className = 'turn-stone stone-white';
+    label.innerHTML = 'AI 생각 중 <span class="dots"><span>.</span><span>.</span><span>.</span></span>';
+  } else if (isPlayerTurn) {
+    stone.className = 'turn-stone stone-black';
+    label.textContent = '내 차례 (흑)';
+  } else {
+    stone.className = 'turn-stone stone-white';
+    label.textContent = 'AI 차례 (백)';
+  }
+}
+
+// ===== RESULT SHEET =====
+function showResult(type) {
+  const map = {
+    win:  { emoji:'🎉', title:'승리!',   sub:`스테이지 ${currentStage} 클리어!` },
+    lose: { emoji:'😔', title:'패배...',  sub:`스테이지 ${currentStage} 실패` },
+    draw: { emoji:'🤝', title:'무승부!', sub:'착점 불가 — 비겼습니다' }
+  };
+  const { emoji, title, sub } = map[type];
+
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-sub').textContent = sub;
+  document.getElementById('res-stage').textContent = currentStage;
+  document.getElementById('res-wins').textContent = wins;
+  document.getElementById('res-maxstage').textContent = maxStage;
+
+  const compArea = document.getElementById('completion-area');
+  const nextBtn = document.getElementById('btn-next');
+
+  if (type === 'win' && currentStage >= MAX_STAGE) {
+    compArea.innerHTML = `
+      <div class="completion-banner">
+        <h2>🏆 전 스테이지 완주!</h2>
+        <p>20개 스테이지를 모두 클리어했습니다!</p>
+      </div>`;
+    nextBtn.textContent = '처음부터 다시';
+    nextBtn.style.display = '';
+  } else if (type === 'win') {
+    compArea.innerHTML = '';
+    nextBtn.textContent = `스테이지 ${currentStage + 1} 도전 →`;
+    nextBtn.style.display = '';
+  } else {
+    compArea.innerHTML = '';
+    nextBtn.style.display = 'none';
+  }
+
+  const bs = document.getElementById('result-bs');
+  bs.style.display = 'flex';
+  requestAnimationFrame(() => bs.classList.add('open'));
+}
+
+function hideResult() {
+  const bs = document.getElementById('result-bs');
+  bs.classList.remove('open');
+  setTimeout(() => bs.style.display = 'none', 300);
+}
+
+document.getElementById('btn-retry').addEventListener('click', () => {
+  hideResult();
+  initBoard();
+});
+
+document.getElementById('btn-next').addEventListener('click', () => {
+  if (currentStage >= MAX_STAGE) {
+    currentStage = 1;
+  } else {
+    currentStage++;
+  }
+  hideResult();
+  initBoard();
+});
+
+document.getElementById('btn-restart').addEventListener('click', initBoard);
+
+// ===== TABS =====
+function switchTab(tab) {
+  ['game','ranking'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('content-'+t).classList.toggle('active', t===tab);
+  });
+  if (tab === 'ranking') loadRanking();
+}
+
+// ===== PROFILE =====
+document.getElementById('btn-start').addEventListener('click', () => {
+  const val = document.getElementById('input-nickname').value.trim();
+  const err = document.getElementById('nickname-error');
+  if (val.length < 3) { err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  nickname = val;
+  localStorage.setItem('gomoku_nick', nickname);
+  loadSavedStats();
+  enterGame();
+});
+
+document.getElementById('input-nickname').addEventListener('input', () => {
+  document.getElementById('nickname-error').style.display = 'none';
+});
+document.getElementById('input-nickname').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-start').click();
+});
+
+function loadSavedStats() {
+  const local = JSON.parse(localStorage.getItem('gomoku_records') || '{}');
+  const me = local[nickname];
+  if (me) {
+    wins = me.wins || 0;
+    losses = me.losses || 0;
+    maxStage = me.max_stage || 1;
+    currentStage = Math.min(me.current_stage || 1, MAX_STAGE);
+  } else {
+    wins = 0; losses = 0; maxStage = 1; currentStage = 1;
+  }
+}
+
+function enterGame() {
+  document.getElementById('top-avatar').textContent = nickname[0].toUpperCase();
+  document.getElementById('top-nickname').textContent = nickname;
+  showScreen('screen-main');
+  initBoard();
+  updateUI();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ===== SAVE RECORD =====
+function saveRecord() {
+  // Local
+  const local = JSON.parse(localStorage.getItem('gomoku_records') || '{}');
+  local[nickname] = {
+    wins,
+    losses,
+    games: wins + losses,
+    max_stage: maxStage,
+    current_stage: currentStage
+  };
+  localStorage.setItem('gomoku_records', JSON.stringify(local));
+
+  // Supabase
+  if (USE_SUPABASE) {
+    SB.upsert('gomoku_players', {
+      nickname,
+      wins,
+      losses,
+      games: wins + losses,
+      max_stage: maxStage,
+      updated_at: new Date().toISOString()
+    }).catch(() => {});
+  }
+}
+
+// ===== RANKING =====
+async function loadRanking() {
+  const list = document.getElementById('ranking-list');
+  list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-3);font-size:14px">불러오는 중...</div>';
+
+  let records = [];
+
+  if (USE_SUPABASE) {
+    const data = await SB.select('gomoku_players', 'select=*&order=max_stage.desc,wins.desc&limit=30');
+    if (Array.isArray(data)) records = data;
+  }
+
+  if (!records.length) {
+    // Local fallback
+    const local = JSON.parse(localStorage.getItem('gomoku_records') || '{}');
+    records = Object.entries(local).map(([nick, v]) => ({ nickname: nick, ...v }));
+    records.sort((a,b) => (b.max_stage||1)-(a.max_stage||1) || (b.wins||0)-(a.wins||0));
+  }
+
+  if (!records.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🏆</div>
+        <div class="empty-text">아직 기록이 없어요</div>
+        <div class="empty-sub">첫 번째 플레이어가 되어보세요!</div>
+      </div>`;
+    return;
+  }
+
+  const medals = ['🥇','🥈','🥉'];
+  list.innerHTML = `
+    <div class="ranking-section-title">전체 랭킹 — 최고 스테이지 기준</div>
+    ${records.map((r, i) => `
+      <div class="rank-card ${r.nickname === nickname ? 'me' : ''}">
+        <div class="rank-num">${medals[i] || i+1}</div>
+        <div class="rank-avatar">${r.nickname[0].toUpperCase()}</div>
+        <div class="rank-info">
+          <div class="rank-name">${r.nickname}${r.nickname === nickname ? ' 👈' : ''}</div>
+          <div class="rank-sub">${r.games||0}게임 · 최고 스테이지 ${r.max_stage||1}</div>
+        </div>
+        <div class="rank-score">
+          <div class="rank-wins">${r.wins||0}승</div>
+          <div class="rank-losses">${r.losses||0}패</div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+// ===== INIT =====
+window.addEventListener('resize', () => { resizeCanvas(); });
+
+(function init() {
+  resizeCanvas();
+  const saved = localStorage.getItem('gomoku_nick');
+  if (saved) {
+    nickname = saved;
+    document.getElementById('input-nickname').value = nickname;
+    loadSavedStats();
+    enterGame();
+  } else {
+    showScreen('screen-profile');
+  }
+})();
+</script>
+</body>
+</html>
