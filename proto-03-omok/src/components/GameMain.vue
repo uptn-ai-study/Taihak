@@ -59,7 +59,7 @@ const timerDash = computed(() => {
             <template v-else>AI 차례 (백)</template>
           </span>
         </div>
-        <div v-if="isPlayerTurn && !gameOver && !aiThinking" class="timer-ring" :class="{ urgent: timeLeft <= 3 }">
+        <div class="timer-ring" :class="{ urgent: timeLeft <= 3 }" :style="{ visibility: isPlayerTurn && !gameOver && !aiThinking ? 'visible' : 'hidden' }">
           <svg width="44" height="44" viewBox="0 0 48 48">
             <circle cx="24" cy="24" r="20" fill="none" stroke="#e5e7eb" stroke-width="3"/>
             <circle
