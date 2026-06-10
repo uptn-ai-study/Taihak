@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import type { Board, LastMove, GameResult } from '../types'
-import { createBoard, checkWin, isBoardFull, isDoubleThree, MAX_STAGE } from '../lib/gomoku'
+import { createBoard, checkWin, isBoardFull, isOverline, isDoubleThree, isDoubleFour, MAX_STAGE } from '../lib/gomoku'
 import { getAIMove, stageDelay } from '../lib/ai'
 import { upsertPlayer } from '../lib/supabase'
 
@@ -68,12 +68,18 @@ export function useGame(nickname: string) {
     lastMove.value = { r, c }
   }
 
+  function isForbidden(r: number, c: number): boolean {
+    return isOverline(board.value, r, c) ||
+           isDoubleThree(board.value, r, c) ||
+           isDoubleFour(board.value, r, c)
+  }
+
   const forbiddenCells = computed<[number, number][]>(() => {
     if (!isPlayerTurn.value || gameOver.value) return []
     const result: [number, number][] = []
     for (let r = 0; r < 15; r++)
       for (let c = 0; c < 15; c++)
-        if (board.value[r][c] === 0 && isDoubleThree(board.value, r, c))
+        if (board.value[r][c] === 0 && isForbidden(r, c))
           result.push([r, c])
     return result
   })
@@ -81,11 +87,11 @@ export function useGame(nickname: string) {
   function handlePlayerMove(r: number, c: number) {
     if (!isPlayerTurn.value || gameOver.value || aiThinking.value) return
     if (board.value[r][c] !== 0) return
-    if (isDoubleThree(board.value, r, c)) return // 33 금수
+    if (isForbidden(r, c)) return // 장목·삼삼·사사 금수
 
     place(r, c, 1)
 
-    if (checkWin(board.value, r, c, 1)) {
+    if (checkWin(board.value, r, c, 1, true)) { // 흑은 정확히 5목
       gameOver.value = true
       wins.value++
       maxStage.value = Math.max(maxStage.value, currentStage.value)

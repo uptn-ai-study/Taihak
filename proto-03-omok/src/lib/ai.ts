@@ -86,7 +86,7 @@ function minimax(
     let best = Infinity
     for (const [r, c] of cells) {
       board[r][c] = 1
-      if (checkWin(board, r, c, 1)) { board[r][c] = 0; return -900_000 }
+      if (checkWin(board, r, c, 1, true)) { board[r][c] = 0; return -900_000 }
       const val = minimax(board, depth - 1, alpha, beta, true)
       board[r][c] = 0
       best = Math.min(best, val)
@@ -124,10 +124,10 @@ export function getAIMove(board: Board, stage: number): [number, number] | null 
     return bestCells[Math.floor(Math.random() * bestCells.length)]
   }
 
-  // Stage 2+: 즉시 승리 차단
+  // Stage 2+: 즉시 승리 차단 (흑은 정확히 5목만)
   for (const [r, c] of cells) {
     board[r][c] = 1
-    const playerWin = checkWin(board, r, c, 1)
+    const playerWin = checkWin(board, r, c, 1, true)
     board[r][c] = 0
     if (playerWin) return [r, c]
   }

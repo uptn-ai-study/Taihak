@@ -7,21 +7,22 @@ export function createBoard(): Board {
   return Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0) as Cell[])
 }
 
-export function checkWin(board: Board, r: number, c: number, player: Cell): boolean {
+// exact5=true → 정확히 5목만 승리 (흑 렌주룰), false → 5목 이상 승리 (백)
+export function checkWin(board: Board, r: number, c: number, player: Cell, exact5 = false): boolean {
   const dirs: [number, number][] = [[0, 1], [1, 0], [1, 1], [1, -1]]
   for (const [dr, dc] of dirs) {
     let cnt = 1
-    for (let d = 1; d < 5; d++) {
+    for (let d = 1; d <= 5; d++) {
       const nr = r + dr * d, nc = c + dc * d
       if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE || board[nr][nc] !== player) break
       cnt++
     }
-    for (let d = 1; d < 5; d++) {
+    for (let d = 1; d <= 5; d++) {
       const nr = r - dr * d, nc = c - dc * d
       if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE || board[nr][nc] !== player) break
       cnt++
     }
-    if (cnt >= 5) return true
+    if (exact5 ? cnt === 5 : cnt >= 5) return true
   }
   return false
 }
@@ -30,14 +31,62 @@ export function isBoardFull(board: Board): boolean {
   return board.every(row => row.every(cell => cell !== 0))
 }
 
-// ===== 33 금수 (Double-Three Rule) =====
-// 흑(player=1)이 동시에 열린 3(open three)을 2개 이상 만드는 착수 금지
+// ===== 렌주룰 금지수 (흑 전용) =====
 
 function getCell(board: Board, r: number, c: number, dr: number, dc: number, d: number): number {
   const nr = r + dr * d, nc = c + dc * d
   if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE) return -1
   const v = board[nr][nc]
-  return v === 2 ? -1 : (v as number) // 상대돌 = 막힘(-1)
+  return v === 2 ? -1 : (v as number)
+}
+
+// --- 장목 (overline): 흑이 6개 이상 일렬 생성 금지 ---
+export function isOverline(board: Board, r: number, c: number): boolean {
+  if (board[r][c] !== 0) return false
+  board[r][c] = 1
+  const dirs: [number, number][] = [[0, 1], [1, 0], [1, 1], [1, -1]]
+  for (const [dr, dc] of dirs) {
+    let cnt = 1
+    for (let d = 1; d <= 5; d++) {
+      const nr = r + dr * d, nc = c + dc * d
+      if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE || board[nr][nc] !== 1) break
+      cnt++
+    }
+    for (let d = 1; d <= 5; d++) {
+      const nr = r - dr * d, nc = c - dc * d
+      if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE || board[nr][nc] !== 1) break
+      cnt++
+    }
+    if (cnt >= 6) { board[r][c] = 0; return true }
+  }
+  board[r][c] = 0
+  return false
+}
+
+// --- 사사 (double-four): 흑이 4를 2방향 이상 동시 생성 금지 ---
+function hasFourInDir(board: Board, r: number, c: number, dr: number, dc: number): boolean {
+  const G = (d: number): number => getCell(board, r, c, dr, dc, d)
+  const L = Array.from({ length: 9 }, (_, i) => G(i - 4))
+  const ci = 4
+  for (let s = Math.max(0, ci - 4); s <= ci && s + 4 <= 8; s++) {
+    const w = L.slice(s, s + 5)
+    if (w.some(v => v === -1)) continue
+    if (w.filter(v => v === 1).length === 4 && w.filter(v => v === 0).length === 1) return true
+  }
+  return false
+}
+
+export function isDoubleFour(board: Board, r: number, c: number): boolean {
+  if (board[r][c] !== 0) return false
+  if (checkWin(board, r, c, 1, true)) return false // 5목은 예외
+  board[r][c] = 1
+  const dirs: [number, number][] = [[0, 1], [1, 0], [1, 1], [1, -1]]
+  let fours = 0
+  for (const [dr, dc] of dirs) {
+    if (hasFourInDir(board, r, c, dr, dc)) fours++
+  }
+  board[r][c] = 0
+  return fours >= 2
 }
 
 // 해당 방향에서 열린 3이 생기는지 검사 (board에 이미 (r,c)=1이 놓인 상태)
@@ -91,7 +140,7 @@ function hasOpenThreeInDir(board: Board, r: number, c: number, dr: number, dc: n
 // (r,c)에 흑돌을 놓았을 때 33 금수인지 검사
 export function isDoubleThree(board: Board, r: number, c: number): boolean {
   if (board[r][c] !== 0) return false
-  if (checkWin(board, r, c, 1)) return false // 5목은 금수 예외
+  if (checkWin(board, r, c, 1, true)) return false // 정확히 5목은 예외
 
   board[r][c] = 1
   const dirs: [number, number][] = [[0, 1], [1, 0], [1, 1], [1, -1]]
