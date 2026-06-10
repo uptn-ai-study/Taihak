@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import GameBoard from './GameBoard.vue'
 import RankingTab from './RankingTab.vue'
 import ResultSheet from './ResultSheet.vue'
@@ -11,8 +11,15 @@ const activeTab = ref<'game' | 'ranking'>('game')
 const {
   board, lastMove, currentStage, isPlayerTurn, gameOver,
   aiThinking, wins, losses, maxStage, result, progress, forbiddenCells,
-  handlePlayerMove, nextStage, retry,
+  timeLeft, handlePlayerMove, nextStage, retry, resetAll,
 } = useGame(props.nickname)
+
+const TURN_TIME = 10
+const timerDash = computed(() => {
+  const r = 20
+  const circ = 2 * Math.PI * r
+  return `${(timeLeft.value / TURN_TIME) * circ} ${circ}`
+})
 </script>
 
 <template>
@@ -65,25 +72,29 @@ const {
           <template v-else-if="isPlayerTurn">내 차례 (흑)</template>
           <template v-else>AI 차례 (백)</template>
         </span>
-      </div>
-      <div class="score-row">
-        <div class="score-item">
-          <div class="score-num">{{ wins }}</div>
-          <div class="score-label">승</div>
-        </div>
-        <div class="score-item">
-          <div class="score-num">{{ losses }}</div>
-          <div class="score-label">패</div>
-        </div>
-        <div class="score-item">
-          <div class="score-num">{{ maxStage }}</div>
-          <div class="score-label">최고</div>
+        <div v-if="isPlayerTurn && !gameOver && !aiThinking" class="timer-ring" :class="{ urgent: timeLeft <= 3 }">
+          <svg width="48" height="48" viewBox="0 0 48 48">
+            <circle cx="24" cy="24" r="20" fill="none" stroke="#e5e7eb" stroke-width="3"/>
+            <circle
+              cx="24" cy="24" r="20" fill="none"
+              :stroke="timeLeft <= 3 ? '#ef4444' : '#5F46FF'"
+              stroke-width="3"
+              stroke-linecap="round"
+              :stroke-dasharray="timerDash"
+              stroke-dashoffset="0"
+              transform="rotate(-90 24 24)"
+              style="transition: stroke-dasharray 0.9s linear, stroke 0.3s"
+            />
+            <text x="24" y="29" text-anchor="middle" font-size="14" font-weight="700"
+              :fill="timeLeft <= 3 ? '#ef4444' : '#1f2937'">{{ timeLeft }}</text>
+          </svg>
         </div>
       </div>
     </div>
 
-    <div class="restart-wrap">
+    <div class="restart-wrap" style="display:flex;gap:8px;">
       <button class="btn-gray" @click="retry()">↺ 다시 시작</button>
+      <button class="btn-gray" style="background:#fee2e2;color:#b91c1c;border-color:#fca5a5;" @click="resetAll()">처음부터 (테스트)</button>
     </div>
   </div>
 

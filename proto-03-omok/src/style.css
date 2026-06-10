@@ -142,7 +142,10 @@ body {
 .turn-stone { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
 .stone-black { background: #1a1a1a; }
 .stone-white { background: #fff; border: 1.5px solid #bbb; }
-.turn-label { font-size: 13px; font-weight: 600; color: var(--text-1); }
+.turn-label { font-size: 13px; font-weight: 600; color: var(--text-1); flex: 1; }
+.timer-ring { flex-shrink: 0; margin-left: auto; }
+.timer-ring.urgent { animation: pulse 0.6s ease-in-out infinite alternate; }
+@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.12); } }
 .score-row { display: flex; gap: 16px; }
 .score-item { text-align: center; }
 .score-num { font-size: 16px; font-weight: 700; color: var(--text-1); }

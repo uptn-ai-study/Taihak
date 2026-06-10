@@ -5,6 +5,7 @@ import { getAIMove, stageDelay } from '../lib/ai'
 import { upsertPlayer } from '../lib/supabase'
 
 const LOCAL_KEY = 'omok_records'
+const TURN_TIME = 10
 
 function loadLocal(nickname: string) {
   const all = JSON.parse(localStorage.getItem(LOCAL_KEY) ?? '{}') as Record<string, {
@@ -30,8 +31,10 @@ export function useGame(nickname: string) {
   const losses = ref(0)
   const maxStage = ref(1)
   const result = ref<GameResult | null>(null)
+  const timeLeft = ref(TURN_TIME)
 
-  // Load saved stats
+  let timerInterval: ReturnType<typeof setInterval> | null = null
+
   const saved = loadLocal(nickname)
   if (saved) {
     wins.value = saved.wins
@@ -42,13 +45,38 @@ export function useGame(nickname: string) {
 
   const progress = computed(() => (currentStage.value / MAX_STAGE) * 100)
 
+  function stopTimer() {
+    if (timerInterval !== null) {
+      clearInterval(timerInterval)
+      timerInterval = null
+    }
+  }
+
+  function startTimer() {
+    stopTimer()
+    timeLeft.value = TURN_TIME
+    timerInterval = setInterval(() => {
+      timeLeft.value--
+      if (timeLeft.value <= 0) {
+        stopTimer()
+        // 시간 초과 → 패배
+        gameOver.value = true
+        losses.value++
+        result.value = 'lose'
+        persist()
+      }
+    }, 1000)
+  }
+
   function initBoard() {
+    stopTimer()
     board.value = createBoard()
     lastMove.value = null
     isPlayerTurn.value = true
     gameOver.value = false
     aiThinking.value = false
     result.value = null
+    startTimer()
   }
 
   function persist() {
@@ -76,22 +104,23 @@ export function useGame(nickname: string) {
 
   const forbiddenCells = computed<[number, number][]>(() => {
     if (!isPlayerTurn.value || gameOver.value) return []
-    const result: [number, number][] = []
+    const res: [number, number][] = []
     for (let r = 0; r < 15; r++)
       for (let c = 0; c < 15; c++)
         if (board.value[r][c] === 0 && isForbidden(r, c))
-          result.push([r, c])
-    return result
+          res.push([r, c])
+    return res
   })
 
   function handlePlayerMove(r: number, c: number) {
     if (!isPlayerTurn.value || gameOver.value || aiThinking.value) return
     if (board.value[r][c] !== 0) return
-    if (isForbidden(r, c)) return // 장목·삼삼·사사 금수
+    if (isForbidden(r, c)) return
 
+    stopTimer()
     place(r, c, 1)
 
-    if (checkWin(board.value, r, c, 1, true)) { // 흑은 정확히 5목
+    if (checkWin(board.value, r, c, 1, true)) {
       gameOver.value = true
       wins.value++
       maxStage.value = Math.max(maxStage.value, currentStage.value)
@@ -107,14 +136,13 @@ export function useGame(nickname: string) {
 
     isPlayerTurn.value = false
     aiThinking.value = true
-
     setTimeout(() => runAI(), stageDelay(currentStage.value))
   }
 
   function runAI() {
     const move = getAIMove(board.value, currentStage.value)
     aiThinking.value = false
-    if (!move) { isPlayerTurn.value = true; return }
+    if (!move) { isPlayerTurn.value = true; startTimer(); return }
 
     const [r, c] = move
     place(r, c, 2)
@@ -133,6 +161,7 @@ export function useGame(nickname: string) {
     }
 
     isPlayerTurn.value = true
+    startTimer()
   }
 
   function nextStage() {
@@ -145,9 +174,22 @@ export function useGame(nickname: string) {
     initBoard()
   }
 
+  function resetAll() {
+    wins.value = 0
+    losses.value = 0
+    maxStage.value = 1
+    currentStage.value = 1
+    localStorage.removeItem(LOCAL_KEY)
+    initBoard()
+  }
+
+  // 초기 타이머 시작
+  startTimer()
+
   return {
     board, lastMove, currentStage, isPlayerTurn, gameOver,
     aiThinking, wins, losses, maxStage, result, progress, forbiddenCells,
-    handlePlayerMove, nextStage, retry, initBoard,
+    timeLeft,
+    handlePlayerMove, nextStage, retry, initBoard, resetAll,
   }
 }
