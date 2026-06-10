@@ -40,40 +40,27 @@ const timerDash = computed(() => {
 
   <!-- Game Tab -->
   <div v-show="activeTab === 'game'" class="tab-content">
-    <div class="stage-header">
-      <div class="stage-row">
-        <span class="stage-label">난이도 진행</span>
-        <span class="stage-badge">스테이지 {{ currentStage }}</span>
-      </div>
-      <div class="progress-track">
-        <div class="progress-fill" :style="{ width: progress + '%' }"></div>
-      </div>
+
+    <!-- 스테이지 타이틀 -->
+    <div class="stage-title-row">
+      <div class="stage-title">STAGE <span class="stage-num">{{ currentStage }}</span></div>
+      <div class="stage-total">/ 20</div>
     </div>
 
+    <!-- 오목판 + 상단 타이머 바 -->
     <div class="board-section">
-      <GameBoard
-        :board="board"
-        :last-move="lastMove"
-        :forbidden-cells="forbiddenCells"
-        :disabled="!isPlayerTurn || gameOver || aiThinking"
-        @place="handlePlayerMove"
-      />
-    </div>
-
-    <div class="status-card">
-      <div class="turn-info">
-        <div class="turn-stone" :class="isPlayerTurn && !aiThinking ? 'stone-black' : 'stone-white'"></div>
-        <span class="turn-label">
-          <template v-if="gameOver">게임 종료</template>
-          <template v-else-if="aiThinking">
-            AI 생각 중
-            <span class="dots"><span>.</span><span>.</span><span>.</span></span>
-          </template>
-          <template v-else-if="isPlayerTurn">내 차례 (흑)</template>
-          <template v-else>AI 차례 (백)</template>
-        </span>
+      <div class="board-top-bar">
+        <div class="turn-indicator">
+          <div class="turn-stone" :class="isPlayerTurn && !aiThinking ? 'stone-black' : 'stone-white'"></div>
+          <span class="turn-label">
+            <template v-if="gameOver">게임 종료</template>
+            <template v-else-if="aiThinking">AI 생각 중<span class="dots"><span>.</span><span>.</span><span>.</span></span></template>
+            <template v-else-if="isPlayerTurn">내 차례 (흑)</template>
+            <template v-else>AI 차례 (백)</template>
+          </span>
+        </div>
         <div v-if="isPlayerTurn && !gameOver && !aiThinking" class="timer-ring" :class="{ urgent: timeLeft <= 3 }">
-          <svg width="48" height="48" viewBox="0 0 48 48">
+          <svg width="44" height="44" viewBox="0 0 48 48">
             <circle cx="24" cy="24" r="20" fill="none" stroke="#e5e7eb" stroke-width="3"/>
             <circle
               cx="24" cy="24" r="20" fill="none"
@@ -90,6 +77,13 @@ const timerDash = computed(() => {
           </svg>
         </div>
       </div>
+      <GameBoard
+        :board="board"
+        :last-move="lastMove"
+        :forbidden-cells="forbiddenCells"
+        :disabled="!isPlayerTurn || gameOver || aiThinking"
+        @place="handlePlayerMove"
+      />
     </div>
 
     <div class="restart-wrap" style="display:flex;gap:8px;">

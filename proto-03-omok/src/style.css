@@ -121,16 +121,19 @@ body {
 /* Tab Content */
 .tab-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
 
-/* Stage */
-.stage-header { padding: 12px 20px 4px; }
-.stage-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.stage-label { font-size: 13px; font-weight: 600; color: var(--text-2); }
-.stage-badge { background: var(--primary); color: #fff; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; }
-.progress-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
-.progress-fill { height: 100%; background: var(--primary); border-radius: 2px; transition: width 0.4s cubic-bezier(.32,1,.55,1); }
+/* Stage title */
+.stage-title-row { display: flex; align-items: baseline; gap: 6px; padding: 16px 20px 4px; }
+.stage-title { font-size: 22px; font-weight: 800; color: var(--text-1); letter-spacing: 0.04em; }
+.stage-num { color: var(--primary); font-size: 32px; line-height: 1; }
+.stage-total { font-size: 14px; font-weight: 500; color: var(--text-3); }
 
 /* Board */
-.board-section { display: flex; justify-content: center; padding: 8px 12px; }
+.board-section { display: flex; flex-direction: column; align-items: center; padding: 4px 12px 8px; }
+.board-top-bar {
+  width: 100%; max-width: 400px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 4px 6px;
+}
 
 /* Status Card */
 .status-card {
@@ -139,6 +142,7 @@ body {
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 .turn-info { display: flex; align-items: center; gap: 8px; }
+.turn-indicator { display: flex; align-items: center; gap: 8px; }
 .turn-stone { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
 .stone-black { background: #1a1a1a; }
 .stone-white { background: #fff; border: 1.5px solid #bbb; }
