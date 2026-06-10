@@ -101,10 +101,7 @@ export function getAIMove(board: Board, stage: number): [number, number] | null 
   const cells = candidates(board)
   if (!cells.length) return null
 
-  // Stage 1: random
-  if (stage === 1) return cells[Math.floor(Math.random() * cells.length)]
-
-  // Immediate win
+  // 모든 스테이지: 즉시 승리 체크
   for (const [r, c] of cells) {
     board[r][c] = 2
     const win = checkWin(board, r, c, 2)
@@ -112,17 +109,46 @@ export function getAIMove(board: Board, stage: number): [number, number] | null 
     if (win) return [r, c]
   }
 
-  // Block player win (stage 3+)
-  if (stage >= 3) {
+  // Stage 1: 승리 차단 없이 기본 점수(낮은 가중치) + 높은 노이즈
+  if (stage === 1) {
+    let best = -Infinity
+    let bestCells: [number, number][] = []
     for (const [r, c] of cells) {
-      board[r][c] = 1
-      const playerWin = checkWin(board, r, c, 1)
+      board[r][c] = 2
+      const atk = cellScore(board, r, c, 2)
       board[r][c] = 0
-      if (playerWin) return [r, c]
+      const score = atk * 0.1 + Math.random() * 3000
+      if (score > best) { best = score; bestCells = [[r, c]] }
+      else if (score === best) bestCells.push([r, c])
     }
+    return bestCells[Math.floor(Math.random() * bestCells.length)]
   }
 
-  if (stage === 2) return cells[Math.floor(Math.random() * cells.length)]
+  // Stage 2+: 즉시 승리 차단
+  for (const [r, c] of cells) {
+    board[r][c] = 1
+    const playerWin = checkWin(board, r, c, 1)
+    board[r][c] = 0
+    if (playerWin) return [r, c]
+  }
+
+  // Stage 2: 낮은 공격 가중치 + 중간 노이즈
+  if (stage === 2) {
+    let best = -Infinity
+    let bestCells: [number, number][] = []
+    for (const [r, c] of cells) {
+      board[r][c] = 2
+      const atk = cellScore(board, r, c, 2)
+      board[r][c] = 0
+      board[r][c] = 1
+      const def = cellScore(board, r, c, 1)
+      board[r][c] = 0
+      const score = atk * 0.25 + def * 0.5 + Math.random() * 1500
+      if (score > best) { best = score; bestCells = [[r, c]] }
+      else if (score === best) bestCells.push([r, c])
+    }
+    return bestCells[Math.floor(Math.random() * bestCells.length)]
+  }
 
   // Minimax for high stages
   const mmDepth = stage >= 18 ? 3 : stage >= 15 ? 2 : stage >= 13 ? 1 : 0

@@ -6,6 +6,7 @@ import { BOARD_SIZE } from '../lib/gomoku'
 const props = defineProps<{
   board: Board
   lastMove: LastMove | null
+  forbiddenCells: [number, number][]
   disabled: boolean
 }>()
 
@@ -70,6 +71,19 @@ function draw() {
     for (let c = 0; c < BOARD_SIZE; c++)
       if (props.board[r][c]) drawStone(ctx, r, c, cs, props.board[r][c] as 1 | 2)
 
+  // Forbidden (33) indicators
+  if (!props.disabled && props.forbiddenCells.length) {
+    ctx.strokeStyle = 'rgba(239,68,68,0.7)'
+    ctx.lineWidth = 1.5
+    for (const [fr, fc] of props.forbiddenCells) {
+      const x = cs * fc + half
+      const y = cs * fr + half
+      const r2 = cs * 0.22
+      ctx.beginPath(); ctx.moveTo(x - r2, y - r2); ctx.lineTo(x + r2, y + r2); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(x + r2, y - r2); ctx.lineTo(x - r2, y + r2); ctx.stroke()
+    }
+  }
+
   // Last move indicator
   if (props.lastMove) {
     const { r, c } = props.lastMove
@@ -125,7 +139,7 @@ function onTouch(e: TouchEvent) {
   if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) emit('place', r, c)
 }
 
-watch(() => [props.board, props.lastMove], draw, { deep: true })
+watch(() => [props.board, props.lastMove, props.forbiddenCells, props.disabled], draw, { deep: true })
 onMounted(() => { resize(); window.addEventListener('resize', resize) })
 onUnmounted(() => window.removeEventListener('resize', resize))
 </script>
