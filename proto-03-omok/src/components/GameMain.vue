@@ -10,7 +10,7 @@ const props = defineProps<{ nickname: string }>()
 const activeTab = ref<'game' | 'ranking'>('game')
 const {
   board, lastMove, currentStage, isPlayerTurn, gameOver,
-  aiThinking, wins, losses, maxStage, result, progress, forbiddenCells,
+  aiThinking, wins, maxStage, result, forbiddenCells,
   timeLeft, handlePlayerMove, nextStage, retry, resetAll,
 } = useGame(props.nickname)
 
