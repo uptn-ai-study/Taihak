@@ -81,6 +81,25 @@ export function updateEqualizerState(
 }
 
 /**
+ * 세그먼트 위치 비율(0~1)로 Player 채널 색상을 반환합니다 (Cyan → Purple → Magenta).
+ */
+function getPlayerColor(ratio: number, alpha?: number): string {
+  let r: number, g: number, b: number
+  if (ratio < 0.5) {
+    r = Math.round((150 - 0) * (ratio * 2))
+    g = Math.round(240 + (70 - 240) * (ratio * 2))
+    b = 255
+  } else {
+    r = Math.round(150 + (255 - 150) * ((ratio - 0.5) * 2))
+    g = Math.round(70 + (0 - 70) * ((ratio - 0.5) * 2))
+    b = Math.round(255 + (200 - 255) * ((ratio - 0.5) * 2))
+  }
+  return alpha !== undefined
+    ? `rgba(${r}, ${g}, ${b}, ${alpha})`
+    : `rgb(${r}, ${g}, ${b})`
+}
+
+/**
  * 특정 영역(xOffset, yOffset, width, height) 내에 세그먼트 막대 이퀄라이저를 드로잉합니다.
  * @param progressLimit 가로 한계선 비율 (0 ~ 1, 이 비례 너머의 막대는 꺼진 프레임으로 렌더링)
  */
@@ -145,27 +164,11 @@ export function drawBarEqualizer(
           // 최고점에 걸려 있는 피크 점: 백색에 가까운 밝은 네온 하이라이트
           fillStyle = isGhost ? 'rgba(255, 185, 225, 0.95)' : 'rgba(255, 255, 255, 0.95)';
         } else {
-          // 세로 위치 비율에 다른 단일 막대 그라데이션
+          // 세로 위치 비율에 따른 단일 막대 그라데이션
           const ratio = s / (numSegments - 1 || 1);
-          if (isGhost) {
-            // 목표(Ghost) 채널: 자홍/핑크 계열 그라데이션
-            fillStyle = `rgba(255, 110, 195, ${0.45 + ratio * 0.45})`;
-          } else {
-            // 플레이어 채널: 청록(Cyan) -> 보라(Purple) -> 자홍(Magenta) 하이엔드 테마
-            if (ratio < 0.5) {
-              // Cyan -> Purple
-              const r = Math.round(0 + (150 - 0) * (ratio * 2));
-              const g = Math.round(240 + (70 - 240) * (ratio * 2));
-              const b = 255;
-              fillStyle = `rgb(${r}, ${g}, ${b})`;
-            } else {
-              // Purple -> Magenta
-              const r = Math.round(150 + (255 - 150) * ((ratio - 0.5) * 2));
-              const g = Math.round(70 + (0 - 70) * ((ratio - 0.5) * 2));
-              const b = Math.round(255 + (200 - 255) * ((ratio - 0.5) * 2));
-              fillStyle = `rgb(${r}, ${g}, ${b})`;
-            }
-          }
+          fillStyle = isGhost
+            ? `rgba(255, 110, 195, ${0.45 + ratio * 0.45})`
+            : getPlayerColor(ratio);
         }
       }
       
@@ -187,23 +190,10 @@ export function drawBarEqualizer(
       // 아래로 내려갈수록 반사 광원이 급격히 페이드아웃되도록 감쇠 공식 적용
       const fadeRatio = 1.0 - (s / numSegments);
       const alphaMult = 0.32 * Math.pow(fadeRatio, 2.0); // 지수식 감쇠
-      
-      let fillStyle = '';
-      if (isGhost) {
-        fillStyle = `rgba(255, 110, 195, ${alphaMult})`;
-      } else {
-        if (ratio < 0.5) {
-          const r = Math.round(0 + (150 - 0) * (ratio * 2));
-          const g = Math.round(240 + (70 - 240) * (ratio * 2));
-          const b = 255;
-          fillStyle = `rgba(${r}, ${g}, ${b}, ${alphaMult})`;
-        } else {
-          const r = Math.round(150 + (255 - 150) * ((ratio - 0.5) * 2));
-          const g = Math.round(70 + (0 - 70) * ((ratio - 0.5) * 2));
-          const b = Math.round(255 + (200 - 255) * ((ratio - 0.5) * 2));
-          fillStyle = `rgba(${r}, ${g}, ${b}, ${alphaMult})`;
-        }
-      }
+
+      const fillStyle = isGhost
+        ? `rgba(255, 110, 195, ${alphaMult})`
+        : getPlayerColor(ratio, alphaMult);
       
       ctx.fillStyle = fillStyle;
       ctx.fillRect(x, reflectionY, barWidth, segmentHeight * reflectionScale);

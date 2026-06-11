@@ -159,7 +159,7 @@ function 전역누름종료() {
 
   // 게임 스토어 제출 및 화면 전환 실행 (에러 발생 시에도 중단 방지)
   try {
-    store.submitRecreatation(playerMs)
+    store.submitRecreation(playerMs)
   } catch (e) {
     console.error('submitRecreatation error:', e)
   }

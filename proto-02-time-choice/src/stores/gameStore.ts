@@ -26,6 +26,7 @@ export const useGameStore = defineStore('game', () => {
   const rounds = ref<RoundData[]>([])
   const targetMs = ref(0)          // 현재 라운드 목표 시간
   const countdownValue = ref(3)
+  let _countdownTimerId: ReturnType<typeof setTimeout> | null = null
 
   // ── Getters ────────────────────────────────────────────
   const totalScore = computed(() =>
@@ -62,16 +63,26 @@ export const useGameStore = defineStore('game', () => {
 
   /** 카운트다운 실행 */
   function _runCountdown() {
+    if (_countdownTimerId !== null) clearTimeout(_countdownTimerId)
     countdownValue.value = 3
     const tick = () => {
       if (countdownValue.value > 1) {
         countdownValue.value--
-        setTimeout(tick, 900)
+        _countdownTimerId = setTimeout(tick, 900)
       } else {
+        _countdownTimerId = null
         screen.value = 'watch'
       }
     }
-    setTimeout(tick, 900)
+    _countdownTimerId = setTimeout(tick, 900)
+  }
+
+  /** 진행 중인 카운트다운 취소 */
+  function _cancelCountdown() {
+    if (_countdownTimerId !== null) {
+      clearTimeout(_countdownTimerId)
+      _countdownTimerId = null
+    }
   }
 
   /** 관찰 화면 → 재현 화면 */
@@ -80,7 +91,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /** 플레이어가 재현 완료 */
-  function submitRecreatation(playerMs: number) {
+  function submitRecreation(playerMs: number) {
     const score = calcScore(targetMs.value, playerMs)
     rounds.value.push({
       targetMs: targetMs.value,
@@ -104,6 +115,7 @@ export const useGameStore = defineStore('game', () => {
 
   /** 게임 재시작 */
   function restartGame() {
+    _cancelCountdown()
     screen.value = 'intro'
   }
 
@@ -124,7 +136,7 @@ export const useGameStore = defineStore('game', () => {
     currentRoundResult,
     startGame,
     onWatchDone,
-    submitRecreatation,
+    submitRecreation,
     nextRound,
     restartGame,
     setDifficulty,
