@@ -59,10 +59,9 @@ export function useGame(nickname: string) {
       timeLeft.value--
       if (timeLeft.value <= 0) {
         stopTimer()
-        // 시간 초과 → 패배
         gameOver.value = true
         losses.value++
-        result.value = 'lose'
+        result.value = 'timeout'
         persist()
       }
     }, 1000)

@@ -15,4 +15,4 @@ export interface PlayerRecord {
   updated_at?: string
 }
 
-export type GameResult = 'win' | 'lose' | 'draw'
+export type GameResult = 'win' | 'lose' | 'timeout' | 'draw'

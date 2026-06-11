@@ -19,9 +19,10 @@ const visible = ref(false)
 const open = ref(false)
 
 const config = {
-  win:  { emoji: '🎉', title: '승리!',   sub: (s: number) => `스테이지 ${s} 클리어!` },
-  lose: { emoji: '😔', title: '패배...',  sub: (s: number) => `스테이지 ${s} 실패` },
-  draw: { emoji: '🤝', title: '무승부!', sub: () => '착점 불가 — 비겼습니다' },
+  win:     { emoji: '🎉', title: '승리!',        sub: (s: number) => `스테이지 ${s} 클리어!` },
+  lose:    { emoji: '😔', title: '패배...',       sub: (s: number) => `스테이지 ${s} 실패` },
+  timeout: { emoji: '⏱️', title: '시간 초과!',   sub: (s: number) => `스테이지 ${s} — 착수 시간 초과` },
+  draw:    { emoji: '🤝', title: '무승부!',       sub: () => '착점 불가 — 비겼습니다' },
 }
 
 watch(() => props.result, (val) => {
