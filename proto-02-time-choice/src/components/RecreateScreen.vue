@@ -112,7 +112,7 @@ function 렌더링루프(현재시각: number) {
   animId = requestAnimationFrame(렌더링루프)
 }
 
-function 누름시작(e: PointerEvent) {
+function 누름시작(_e: PointerEvent) {
   if (isSubmitted.value || isPressing.value) return
   
   // 윈도우 전역 리스너가 등록되어 마우스 이탈 시 릴리즈가 안전하게 감지되므로,
