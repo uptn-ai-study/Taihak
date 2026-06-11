@@ -117,7 +117,7 @@ export function getAIMove(board: Board, stage: number): [number, number] | null 
     if (playerWin) return [r, c]
   }
 
-  // Stage 1: 낮은 공격 가중치 + 중간 노이즈 (구 Stage 2 수준)
+  // Stage 1: 매우 낮은 가중치 + 높은 노이즈 (차단만 하고 대부분 무작위)
   if (stage === 1) {
     let best = -Infinity
     let bestCells: [number, number][] = []
@@ -128,7 +128,7 @@ export function getAIMove(board: Board, stage: number): [number, number] | null 
       board[r][c] = 1
       const def = cellScore(board, r, c, 1)
       board[r][c] = 0
-      const score = atk * 0.25 + def * 0.5 + Math.random() * 1500
+      const score = atk * 0.08 + def * 0.15 + Math.random() * 2500
       if (score > best) { best = score; bestCells = [[r, c]] }
       else if (score === best) bestCells.push([r, c])
     }

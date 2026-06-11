@@ -8,6 +8,7 @@ const props = defineProps<{
   lastMove: LastMove | null
   forbiddenCells: [number, number][]
   disabled: boolean
+  urgent: boolean
 }>()
 
 const emit = defineEmits<{
@@ -145,10 +146,21 @@ onUnmounted(() => window.removeEventListener('resize', resize))
 </script>
 
 <template>
-  <canvas
-    ref="canvas"
-    style="display:block;border-radius:8px;touch-action:none;cursor:pointer;"
-    @click="onClick"
-    @touchend="onTouch"
-  />
+  <div class="board-wrap" :class="{ 'board-urgent': urgent }">
+    <canvas
+      ref="canvas"
+      style="display:block;border-radius:8px;touch-action:none;cursor:pointer;"
+      @click="onClick"
+      @touchend="onTouch"
+    />
+  </div>
 </template>
+
+<style scoped>
+.board-wrap { border-radius: 10px; line-height: 0; }
+.board-urgent { animation: board-flash 0.6s ease-in-out infinite alternate; }
+@keyframes board-flash {
+  from { box-shadow: 0 0 0 0px rgba(239, 68, 68, 0); }
+  to   { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.55); }
+}
+</style>

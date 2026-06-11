@@ -82,6 +82,7 @@ const timerDash = computed(() => {
         :last-move="lastMove"
         :forbidden-cells="forbiddenCells"
         :disabled="!isPlayerTurn || gameOver || aiThinking"
+        :urgent="isPlayerTurn && !gameOver && !aiThinking && timeLeft <= 3"
         @place="handlePlayerMove"
       />
     </div>
