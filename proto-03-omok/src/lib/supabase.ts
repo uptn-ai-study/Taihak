@@ -1,18 +1,21 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { PlayerRecord } from '../types'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+const supabase: SupabaseClient | null =
+  supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null
 
 const TABLE = 'omok_players'
 
 export async function upsertPlayer(record: Omit<PlayerRecord, 'updated_at'>): Promise<void> {
+  if (!supabase) return
   await supabase.from(TABLE).upsert({ ...record, updated_at: new Date().toISOString() })
 }
 
 export async function fetchRanking(): Promise<PlayerRecord[]> {
+  if (!supabase) throw new Error('Supabase not configured')
   const { data, error } = await supabase
     .from(TABLE)
     .select('*')
