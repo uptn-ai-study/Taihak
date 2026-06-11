@@ -192,8 +192,13 @@ export function getAIMove(board: Board, stage: number): [number, number] | null 
 }
 
 export function stageDelay(stage: number): number {
-  if (stage <= 2) return 400
-  if (stage <= 8) return 400 + stage * 30
-  if (stage <= 14) return 600 + stage * 20
-  return 800 + stage * 30
+  // 마치 실제로 고민하는 것처럼 min~max 사이 랜덤 딜레이
+  let min: number, max: number
+  if (stage <= 2)      { min = 300;  max = 900  }
+  else if (stage <= 5) { min = 400;  max = 1400 }
+  else if (stage <= 8) { min = 500;  max = 1800 }
+  else if (stage <= 12){ min = 700;  max = 2400 }
+  else if (stage <= 16){ min = 900;  max = 3000 }
+  else                 { min = 1200; max = 4000 }
+  return min + Math.floor(Math.random() * (max - min))
 }

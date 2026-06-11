@@ -13,6 +13,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   retry: []
   next: []
+  home: []
 }>()
 
 const visible = ref(false)
@@ -39,6 +40,7 @@ function close() {
 
 function onRetry() { close(); emit('retry') }
 function onNext()  { close(); emit('next') }
+function onHome()  { close(); emit('home') }
 </script>
 
 <template>
@@ -77,6 +79,8 @@ function onNext()  { close(); emit('next') }
               {{ stage >= MAX_STAGE ? '처음부터 다시' : `스테이지 ${stage + 1} 도전 →` }}
             </button>
           </div>
+
+          <button class="btn-home" @click="onHome">🏠 홈으로 돌아가기</button>
         </div>
       </div>
     </div>

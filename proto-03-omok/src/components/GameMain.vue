@@ -2,12 +2,14 @@
 import { ref, computed } from 'vue'
 import GameBoard from './GameBoard.vue'
 import RankingTab from './RankingTab.vue'
+import GuideTab from './GuideTab.vue'
 import ResultSheet from './ResultSheet.vue'
 import { useGame } from '../composables/useGame'
 
 const props = defineProps<{ nickname: string }>()
+const emit = defineEmits<{ goHome: [] }>()
 
-const activeTab = ref<'game' | 'ranking'>('game')
+const activeTab = ref<'game' | 'ranking' | 'guide'>('game')
 const {
   board, lastMove, currentStage, isPlayerTurn, gameOver,
   aiThinking, wins, maxStage, result, forbiddenCells,
@@ -20,6 +22,11 @@ const timerDash = computed(() => {
   const circ = 2 * Math.PI * r
   return `${(timeLeft.value / TURN_TIME) * circ} ${circ}`
 })
+
+function onGoHome() {
+  resetAll()
+  emit('goHome')
+}
 </script>
 
 <template>
@@ -36,12 +43,13 @@ const timerDash = computed(() => {
   <div class="tab-bar">
     <button class="tab-item" :class="{ active: activeTab === 'game' }" @click="activeTab = 'game'">게임</button>
     <button class="tab-item" :class="{ active: activeTab === 'ranking' }" @click="activeTab = 'ranking'">랭킹</button>
+    <button class="tab-item" :class="{ active: activeTab === 'guide' }" @click="activeTab = 'guide'">가이드</button>
   </div>
 
   <!-- Game Tab -->
   <div v-show="activeTab === 'game'" class="tab-content">
 
-    <!-- 스테이지 타이틀 -->
+    <!-- 스테이지 타이틀 (중앙 정렬) -->
     <div class="stage-title-row">
       <div class="stage-title">STAGE <span class="stage-num">{{ currentStage }}</span></div>
       <div class="stage-total">/ 20</div>
@@ -89,13 +97,18 @@ const timerDash = computed(() => {
 
     <div class="restart-wrap" style="display:flex;gap:8px;">
       <button class="btn-gray" @click="retry()">↺ 다시 시작</button>
-      <button class="btn-gray" style="background:#fee2e2;color:#b91c1c;border-color:#fca5a5;" @click="resetAll()">처음부터 (테스트)</button>
+      <button class="btn-gray" @click="onGoHome()">🏠 홈으로</button>
     </div>
   </div>
 
   <!-- Ranking Tab -->
   <div v-show="activeTab === 'ranking'" class="tab-content">
     <RankingTab :nickname="nickname" />
+  </div>
+
+  <!-- Guide Tab -->
+  <div v-show="activeTab === 'guide'" class="tab-content">
+    <GuideTab />
   </div>
 
   <!-- Result Sheet -->
@@ -106,5 +119,6 @@ const timerDash = computed(() => {
     :max-stage="maxStage"
     @retry="retry()"
     @next="nextStage()"
+    @home="onGoHome()"
   />
 </template>
