@@ -8,7 +8,7 @@ const error = ref(false)
 
 function onStart() {
   const val = input.value.trim()
-  if (val.length < 3) { error.value = true; return }
+  if (val.length < 3 || val.length > 12) { error.value = true; return }
   error.value = false
   localStorage.setItem('omok_nick', val)
   emit('start', val)
@@ -30,13 +30,13 @@ function onStart() {
         class="input-field"
         type="text"
         placeholder="닉네임을 입력하세요"
-        maxlength="10"
+        maxlength="12"
         autocomplete="off"
         @keydown.enter="onStart"
         @input="error = false"
       />
-      <div v-if="error" class="input-error">닉네임은 3자 이상 입력해주세요</div>
-      <div v-else class="input-hint">3~10자, 랭킹에 공개됩니다</div>
+      <div v-if="error" class="input-error">닉네임은 3~12자로 입력해주세요</div>
+      <div v-else class="input-hint">3~12자, 랭킹에 공개됩니다</div>
     </div>
 
     <button class="btn-primary" @click="onStart">게임 시작</button>
