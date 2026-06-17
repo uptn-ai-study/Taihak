@@ -138,7 +138,7 @@ async function getCryptoPrice(
   const buyPrice = parseFloat(klines[0][4])   // 첫 캔들 종가
   const currentPrice = parseFloat(ticker.price)
 
-  return { buyPrice, currentPrice, currency: 'KRW' }
+  return { buyPrice, currentPrice, currency: 'USD' }
 }
 
 async function getYahooPrice(
@@ -169,7 +169,7 @@ async function getYahooPrice(
   let currentIdx = closes.length - 1
   while (currentIdx > 0 && closes[currentIdx] == null) currentIdx--
 
-  return { buyPrice: closes[buyIdx], currentPrice: closes[currentIdx], currency: 'KRW' }
+  return { buyPrice: closes[buyIdx], currentPrice: closes[currentIdx], currency }
 }
 
 export async function calculateReturn(
