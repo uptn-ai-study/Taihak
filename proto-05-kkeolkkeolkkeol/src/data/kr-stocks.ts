@@ -21071,10 +21071,30 @@ export const KR_STOCKS: AssetOption[] = [
   }
 ]
 
+// 검색어와 종목의 일치도 점수 (높을수록 우선). 매칭 실패 시 -1
+function scoreKrStock(name: string, code: string, q: string): number {
+  if (name === q) return 100              // 이름 완전 일치
+  if (code === q) return 95               // 종목코드 완전 일치
+  if (name.startsWith(q)) return 80       // 이름 접두 일치 (예: "삼성전자" → "삼성전자우")
+  // 공백/구분자로 나뉜 단어가 q로 시작 (예: "KODEX 삼성전자" 의 "삼성전자")
+  if (name.split(/[\s()]+/).some(w => w.startsWith(q))) return 60
+  if (name.includes(q)) return 40         // 이름 부분 일치
+  if (code.includes(q)) return 20         // 종목코드 부분 일치
+  return -1
+}
+
 export function searchKrStocks(query: string): AssetOption[] {
   const q = query.trim().toLowerCase()
   if (!q) return []
-  return KR_STOCKS.filter(
-    s => s.name.toLowerCase().includes(q) || s.symbol.toLowerCase().replace('.ks', '').replace('.kq', '').includes(q)
-  ).slice(0, 10)
+  return KR_STOCKS
+    .map(s => {
+      const name = s.name.toLowerCase()
+      const code = s.symbol.toLowerCase().replace('.ks', '').replace('.kq', '')
+      return { s, score: scoreKrStock(name, code, q), len: s.name.length }
+    })
+    .filter(item => item.score >= 0)
+    // 점수 내림차순 → 동점이면 이름 길이 오름차순(더 짧은 = 더 가까운 종목) → 가나다순
+    .sort((a, b) => b.score - a.score || a.len - b.len || a.s.name.localeCompare(b.s.name, 'ko'))
+    .slice(0, 10)
+    .map(item => item.s)
 }
