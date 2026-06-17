@@ -1,0 +1,32 @@
+@import url('https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/SUIT-Variable.min.css');
+
+:root {
+  --primary:       #5F46FF;
+  --primary-dark:  #4A35E0;
+  --primary-light: #EEEAFF;
+  --primary-200:   #F2F0FF;
+  --primary-dim:   rgba(95,70,255,0.12);
+  --card-bg:       #FFFFFF;
+  --muted-bg:      #F0F2F8;
+  --border:        #E8EAF0;
+  --text-1:        #0F1729;
+  --text-2:        #6B7280;
+  --text-3:        #A0A8B8;
+  --success:       #00C48C;
+  --error:         #FF5C5C;
+
+  /* 다크 카드 그라디언트 */
+  --dark-card-from: #1A1F5E;
+  --dark-card-to:   #3D2D8A;
+  --dark-card-mid:  #2D1F7A;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'SUIT Variable', 'SUIT', -apple-system, sans-serif;
+  background: var(--muted-bg);
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+}

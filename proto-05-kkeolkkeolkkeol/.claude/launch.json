@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "proto-05-kkeolkkeolkkeol",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "3005"],
+      "cwd": "../proto-05-kkeolkkeolkkeol",
+      "port": 3005
+    }
+  ]
+}
