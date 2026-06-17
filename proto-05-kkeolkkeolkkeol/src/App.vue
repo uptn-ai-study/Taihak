@@ -303,17 +303,25 @@ const canSubmit = () => selectedAsset.value && buyDate.value && buyAmountRaw.val
    입력 필드
 ══════════════════════════════════════ */
 .row-fields { display: flex; gap: 12px; }
-.field { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+/* min-width:0 — flex 자식이 콘텐츠 최소 너비(특히 iOS date 컨트롤) 밑으로
+   줄어들 수 있게 해 좁은 화면에서 필드가 겹치는 문제를 방지 */
+.field { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 
 .input-field {
-  width: 100%; height: 48px; padding: 0 14px;
+  width: 100%; min-width: 0; max-width: 100%; height: 48px; padding: 0 14px;
   background: var(--muted-bg); border: 2px solid transparent;
   border-radius: 12px; font-size: 14px; font-weight: 600;
   color: var(--text-1); outline: none; font-family: inherit;
   transition: border-color 0.15s, background 0.15s;
 }
 .input-field:focus { border-color: var(--primary); background: #fff; }
-.date-input { cursor: pointer; }
+/* iOS Safari의 date 입력은 기본 스타일이 고정 최소 너비를 강제하므로 해제 */
+.date-input {
+  cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+}
+.date-input::-webkit-date-and-time-value { text-align: left; }
+.date-input::-webkit-calendar-picker-indicator { margin-left: auto; }
 
 .input-wrap { position: relative; }
 .input-wrap .input-field { padding-right: 36px; }
