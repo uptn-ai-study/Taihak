@@ -61,12 +61,14 @@ const canSubmit = () => selectedAsset.value && buyDate.value && buyAmountRaw.val
   <div class="app">
     <!-- 헤더 -->
     <header class="header">
-      <div class="header-top">
-        <div>
-          <p class="header-greeting">투자 수익률 계산기</p>
-          <h1 class="header-title">껄껄껄 <span class="emoji">😅</span></h1>
+      <div class="header-inner">
+        <div class="header-top">
+          <div>
+            <p class="header-greeting">투자 수익률 계산기</p>
+            <h1 class="header-title">껄껄껄 <span class="emoji">😅</span></h1>
+          </div>
+          <div class="header-badge">그때 샀더라면</div>
         </div>
-        <div class="header-badge">그때 샀더라면</div>
       </div>
     </header>
 
@@ -77,85 +79,113 @@ const canSubmit = () => selectedAsset.value && buyDate.value && buyAmountRaw.val
 
     <!-- 입력 화면 -->
     <div v-else class="content">
+      <div class="form-grid">
 
-      <!-- 자산 종류 선택 -->
-      <div class="form-card">
-        <p class="form-label">자산 종류</p>
-        <div class="type-chips">
-          <button
-            v-for="t in ASSET_TYPES"
-            :key="t.value"
-            class="type-chip"
-            :class="{ active: assetType === t.value }"
-            @click="assetType = t.value"
-          >
-            <img v-if="t.iconType === 'img'" :src="t.icon" class="chip-flag" alt="" />
-            <span v-else class="chip-svg" v-html="t.icon" />
-            <span class="chip-label">{{ t.label }}</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 자산 이름 -->
-      <div class="form-card">
-        <p class="form-label">자산 이름</p>
-        <AssetSearchInput v-model="selectedAsset" :assetType="assetType" />
-      </div>
-
-      <!-- 매수 시점 + 금액 -->
-      <div class="form-card">
-        <div class="row-fields">
-          <div class="field">
-            <p class="form-label">매수 시점</p>
-            <input
-              v-model="buyDate"
-              type="date"
-              class="input-field date-input"
-              :max="maxDate"
-              min="2000-01-01"
-            />
+        <!-- 자산 종류 선택 -->
+        <div class="form-card form-card--type">
+          <p class="form-label">자산 종류</p>
+          <div class="type-chips">
+            <button
+              v-for="t in ASSET_TYPES"
+              :key="t.value"
+              class="type-chip"
+              :class="{ active: assetType === t.value }"
+              @click="assetType = t.value"
+            >
+              <img v-if="t.iconType === 'img'" :src="t.icon" class="chip-flag" alt="" />
+              <span v-else class="chip-svg" v-html="t.icon" />
+              <span class="chip-label">{{ t.label }}</span>
+            </button>
           </div>
-          <div class="field">
-            <p class="form-label">매수 금액</p>
-            <div class="input-wrap">
+        </div>
+
+        <!-- 자산 이름 -->
+        <div class="form-card form-card--search">
+          <p class="form-label">자산 이름</p>
+          <AssetSearchInput v-model="selectedAsset" :assetType="assetType" />
+        </div>
+
+        <!-- 매수 시점 + 금액 -->
+        <div class="form-card form-card--datetime">
+          <div class="row-fields">
+            <div class="field">
+              <p class="form-label">매수 시점</p>
               <input
-                v-model="buyAmount"
-                type="text"
-                inputmode="numeric"
-                class="input-field"
-                placeholder="10,000,000"
+                v-model="buyDate"
+                type="date"
+                class="input-field date-input"
+                :max="maxDate"
+                min="2000-01-01"
               />
-              <span class="currency-badge">{{ assetType === 'kr-stock' ? '원' : '$' }}</span>
+            </div>
+            <div class="field">
+              <p class="form-label">매수 금액</p>
+              <div class="input-wrap">
+                <input
+                  v-model="buyAmount"
+                  type="text"
+                  inputmode="numeric"
+                  class="input-field"
+                  placeholder="10,000,000"
+                />
+                <span class="currency-badge">{{ assetType === 'kr-stock' ? '원' : '$' }}</span>
+              </div>
             </div>
           </div>
         </div>
+
+        <!-- 에러 + 계산 버튼 -->
+        <div class="form-footer">
+          <div v-if="error" class="error-msg">
+            <span class="error-icon">⚠️</span>{{ error }}
+          </div>
+          <button
+            class="btn-primary"
+            :disabled="!canSubmit() || loading"
+            @click="calculate"
+          >
+            <span v-if="loading" class="loading-inner">
+              <span class="spinner" />계산 중...
+            </span>
+            <span v-else>수익률 계산하기</span>
+          </button>
+        </div>
+
       </div>
-
-      <!-- 에러 -->
-      <div v-if="error" class="error-msg">
-        <span class="error-icon">⚠️</span>{{ error }}
-      </div>
-
-      <!-- 계산 버튼 -->
-      <button
-        class="btn-primary"
-        :disabled="!canSubmit() || loading"
-        @click="calculate"
-      >
-        <span v-if="loading" class="loading-inner">
-          <span class="spinner" />계산 중...
-        </span>
-        <span v-else>수익률 계산하기</span>
-      </button>
-
     </div>
   </div>
 </template>
 
 <style scoped>
-.app { min-height: 100dvh; display: flex; flex-direction: column; }
+/* ══════════════════════════════════════
+   앱 컨테이너
+══════════════════════════════════════ */
+.app {
+  min-height: 100dvh;
+  display: flex; flex-direction: column;
+  background: var(--muted-bg);
+}
 
-/* ── 헤더 ── */
+/* tablet+: 중앙 카드형 */
+@media (min-width: 640px) {
+  .app {
+    max-width: 600px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    box-shadow: 0 0 60px rgba(15,23,41,0.15);
+  }
+}
+
+/* desktop: 더 넓은 단일 컬럼 */
+@media (min-width: 1024px) {
+  .app {
+    max-width: 760px;
+  }
+}
+
+/* ══════════════════════════════════════
+   헤더
+══════════════════════════════════════ */
 .header {
   background: linear-gradient(135deg, var(--dark-card-from) 0%, var(--dark-card-mid) 50%, var(--dark-card-to) 100%);
   padding: 48px 24px 32px;
@@ -164,52 +194,91 @@ const canSubmit = () => selectedAsset.value && buyDate.value && buyAmountRaw.val
 .header::before {
   content: '';
   position: absolute; top: -60px; right: -40px;
-  width: 200px; height: 200px;
-  border-radius: 50%;
+  width: 200px; height: 200px; border-radius: 50%;
   background: rgba(255,255,255,0.05);
 }
 .header::after {
   content: '';
   position: absolute; bottom: -30px; left: -20px;
-  width: 140px; height: 140px;
-  border-radius: 50%;
+  width: 140px; height: 140px; border-radius: 50%;
   background: rgba(255,255,255,0.04);
 }
-.header-top { display: flex; align-items: flex-start; justify-content: space-between; position: relative; z-index: 1; }
+.header-inner { position: relative; z-index: 1; }
+.header-top { display: flex; align-items: flex-start; justify-content: space-between; }
 .header-greeting { font-size: 13px; color: rgba(255,255,255,0.6); letter-spacing: 0.5px; margin-bottom: 6px; }
 .header-title { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
 .emoji { font-size: 28px; }
 .header-badge {
-  background: rgba(255,255,255,0.15);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: rgba(255,255,255,0.9);
-  font-size: 11px; font-weight: 600;
-  padding: 6px 12px; border-radius: 20px;
-  white-space: nowrap; letter-spacing: 0.3px;
+  background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.9);
+  font-size: 11px; font-weight: 600; padding: 6px 12px;
+  border-radius: 20px; white-space: nowrap; letter-spacing: 0.3px;
 }
 
-/* ── 콘텐츠 ── */
+@media (min-width: 1024px) {
+  .header { padding: 56px 40px 40px; }
+  .header-greeting { font-size: 14px; }
+  .header-title { font-size: 40px; }
+}
+
+/* ══════════════════════════════════════
+   콘텐츠 영역
+══════════════════════════════════════ */
 .content {
-  flex: 1; padding: 20px;
+  flex: 1;
+  padding: 16px;
+}
+
+@media (min-width: 640px) {
+  .content { padding: 20px; }
+}
+
+@media (min-width: 1024px) {
+  .content { padding: 28px 32px 32px; }
+}
+
+/* ══════════════════════════════════════
+   폼 그리드
+══════════════════════════════════════ */
+.form-grid {
   display: flex; flex-direction: column; gap: 12px;
 }
 
-/* ── 폼 카드 ── */
+/* desktop: 2컬럼 그리드 */
+@media (min-width: 1024px) {
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 16px;
+  }
+  .form-card--type     { grid-column: 1; grid-row: 1; }
+  .form-card--search   { grid-column: 2; grid-row: 1; }
+  .form-card--datetime { grid-column: 1 / -1; grid-row: 2; }
+  .form-footer         { grid-column: 1 / -1; grid-row: 3; }
+}
+
+/* ══════════════════════════════════════
+   폼 카드
+══════════════════════════════════════ */
 .form-card {
-  background: #fff;
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 2px 16px rgba(15,23,41,0.06);
+  background: #fff; border-radius: 20px;
+  padding: 20px; box-shadow: 0 2px 16px rgba(15,23,41,0.06);
   display: flex; flex-direction: column; gap: 12px;
 }
+.form-footer { display: flex; flex-direction: column; gap: 10px; }
 .form-label {
   font-size: 12px; font-weight: 700;
-  color: var(--text-3); letter-spacing: 0.8px;
-  text-transform: uppercase;
+  color: var(--text-3); letter-spacing: 0.8px; text-transform: uppercase;
 }
 
-/* ── 자산 종류 칩 ── */
+@media (min-width: 1024px) {
+  .form-card { padding: 24px; border-radius: 24px; }
+}
+
+/* ══════════════════════════════════════
+   자산 종류 칩
+══════════════════════════════════════ */
 .type-chips { display: flex; gap: 8px; }
 .type-chip {
   flex: 1; height: 64px;
@@ -222,28 +291,28 @@ const canSubmit = () => selectedAsset.value && buyDate.value && buyAmountRaw.val
 .chip-svg { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; }
 .chip-svg :deep(svg) { width: 26px; height: 26px; }
 .chip-label { font-size: 10px; font-weight: 700; color: var(--text-2); letter-spacing: -0.1px; }
-.type-chip.active {
-  background: var(--primary-200);
-  border-color: var(--primary);
-}
+.type-chip.active { background: var(--primary-200); border-color: var(--primary); }
 .type-chip.active .chip-label { color: var(--primary); }
 
-/* ── 입력 필드 ── */
+@media (min-width: 1024px) {
+  .type-chip { height: 72px; border-radius: 16px; }
+  .chip-label { font-size: 11px; }
+}
+
+/* ══════════════════════════════════════
+   입력 필드
+══════════════════════════════════════ */
 .row-fields { display: flex; gap: 12px; }
 .field { flex: 1; display: flex; flex-direction: column; gap: 8px; }
 
 .input-field {
-  width: 100%; height: 48px;
-  padding: 0 14px;
+  width: 100%; height: 48px; padding: 0 14px;
   background: var(--muted-bg); border: 2px solid transparent;
   border-radius: 12px; font-size: 14px; font-weight: 600;
   color: var(--text-1); outline: none; font-family: inherit;
   transition: border-color 0.15s, background 0.15s;
 }
-.input-field:focus {
-  border-color: var(--primary);
-  background: #fff;
-}
+.input-field:focus { border-color: var(--primary); background: #fff; }
 .date-input { cursor: pointer; }
 
 .input-wrap { position: relative; }
@@ -253,40 +322,45 @@ const canSubmit = () => selectedAsset.value && buyDate.value && buyAmountRaw.val
   font-size: 12px; font-weight: 700; color: var(--text-3);
 }
 
-/* ── 에러 ── */
+@media (min-width: 1024px) {
+  .input-field { height: 52px; font-size: 15px; border-radius: 14px; }
+  .row-fields { gap: 16px; }
+}
+
+/* ══════════════════════════════════════
+   에러
+══════════════════════════════════════ */
 .error-msg {
   display: flex; align-items: center; gap: 8px;
   font-size: 13px; font-weight: 500; color: var(--error);
-  background: rgba(255,92,92,0.08);
-  padding: 12px 16px; border-radius: 12px;
-  border-left: 3px solid var(--error);
+  background: rgba(255,92,92,0.08); padding: 12px 16px;
+  border-radius: 12px; border-left: 3px solid var(--error);
 }
 .error-icon { font-size: 15px; }
 
-/* ── CTA 버튼 ── */
+/* ══════════════════════════════════════
+   CTA 버튼
+══════════════════════════════════════ */
 .btn-primary {
   width: 100%; height: 56px;
   background: linear-gradient(135deg, #6B56FF 0%, var(--primary) 100%);
-  color: #fff;
-  font-size: 16px; font-weight: 700; letter-spacing: -0.2px;
-  border-radius: 16px; border: none; cursor: pointer;
-  font-family: inherit;
+  color: #fff; font-size: 16px; font-weight: 700; letter-spacing: -0.2px;
+  border-radius: 16px; border: none; cursor: pointer; font-family: inherit;
   box-shadow: 0 8px 24px rgba(95,70,255,0.35);
   transition: opacity 0.15s, transform 0.15s;
-  margin-top: 4px;
 }
 .btn-primary:active:not(:disabled) { opacity: 0.9; transform: scale(0.99); }
-.btn-primary:disabled {
-  background: var(--border); box-shadow: none; cursor: not-allowed; color: var(--text-3);
+.btn-primary:disabled { background: var(--border); box-shadow: none; cursor: not-allowed; color: var(--text-3); }
+
+@media (min-width: 1024px) {
+  .btn-primary { height: 60px; font-size: 17px; border-radius: 18px; }
 }
 
 .loading-inner { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .spinner {
   width: 16px; height: 16px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+  border-radius: 50%; animation: spin 0.7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>

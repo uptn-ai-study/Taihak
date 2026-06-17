@@ -26,7 +26,13 @@
 body {
   font-family: 'SUIT Variable', 'SUIT', -apple-system, sans-serif;
   background: var(--muted-bg);
-  max-width: 480px;
-  margin: 0 auto;
   min-height: 100dvh;
+}
+
+@media (min-width: 640px) {
+  body { background: #D8DCE8; }
+}
+
+@media (min-width: 1024px) {
+  body { background: #CDD2E2; }
 }

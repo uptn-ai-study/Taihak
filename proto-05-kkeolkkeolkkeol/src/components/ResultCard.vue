@@ -40,7 +40,7 @@ function formatDate(d: string) {
     <div class="hero-card" :class="isProfit ? 'hero-profit' : 'hero-loss'">
       <div class="hero-deco" />
       <div class="hero-deco2" />
-      <div class="hero-inner">
+      <div class="hero-inner hero-inner--grow">
         <div class="hero-top">
           <span class="hero-asset-name">{{ result.asset.name }}</span>
           <span class="hero-date">{{ formatDate(result.buyDate) }}</span>
@@ -115,13 +115,30 @@ function formatDate(d: string) {
 <style scoped>
 .result-wrap { display: flex; flex-direction: column; gap: 12px; padding-bottom: 32px; }
 
+@media (min-width: 1024px) {
+  .result-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 16px;
+    padding-bottom: 0;
+    align-items: start;
+  }
+  .hero-card     { grid-column: 1; grid-row: 1 / 4; align-self: stretch; }
+  .reaction-card { grid-column: 2; grid-row: 1; }
+  .info-card     { grid-column: 2; grid-row: 2; }
+  .btn-reset     { grid-column: 2; grid-row: 3; }
+}
+
 /* ── 히어로 카드 ── */
 .hero-card {
   border-radius: 24px;
   padding: 28px 24px 0;
   position: relative; overflow: hidden;
   min-height: 200px;
+  display: flex; flex-direction: column;
 }
+.hero-inner--grow { flex: 1; }
 .hero-profit {
   background: linear-gradient(135deg, #1A1F5E 0%, #2D1F7A 50%, #3D2D8A 100%);
 }
