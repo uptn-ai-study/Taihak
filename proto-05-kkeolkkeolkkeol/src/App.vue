@@ -17,7 +17,7 @@ const ASSET_TYPES: { value: AssetType; label: string; icon: string; iconType: 'i
 const assetType = ref<AssetType>('us-stock')
 const selectedAsset = ref<AssetOption | null>(null)
 const buyDate = ref('2020-01-01')
-const buyAmountRaw = ref(10000000)
+const buyAmountRaw = ref(10000)
 const buyAmount = computed({
   get: () => buyAmountRaw.value > 0 ? buyAmountRaw.value.toLocaleString('ko-KR') : '',
   set: (v: string) => {
@@ -29,7 +29,10 @@ const loading = ref(false)
 const error = ref('')
 const result = ref<CalculationResult | null>(null)
 
-watch(assetType, () => { selectedAsset.value = null })
+watch(assetType, (type) => {
+  selectedAsset.value = null
+  buyAmountRaw.value = type === 'kr-stock' ? 10000000 : 10000
+})
 
 const maxDate = new Date().toISOString().split('T')[0]
 
@@ -50,7 +53,7 @@ function reset() {
   result.value = null
   error.value = ''
   buyDate.value = '2020-01-01'
-  buyAmountRaw.value = 10000000
+  buyAmountRaw.value = assetType.value === 'kr-stock' ? 10000000 : 10000
   selectedAsset.value = null
 }
 
@@ -126,7 +129,7 @@ const canSubmit = () => selectedAsset.value && buyDate.value && buyAmountRaw.val
                   type="text"
                   inputmode="numeric"
                   class="input-field"
-                  placeholder="10,000,000"
+                  :placeholder="assetType === 'kr-stock' ? '10,000,000' : '10,000'"
                 />
                 <span class="currency-badge">{{ assetType === 'kr-stock' ? '원' : '$' }}</span>
               </div>
