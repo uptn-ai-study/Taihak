@@ -128,7 +128,7 @@ const canSubmit = () => selectedAsset.value && buyDate.value && buyAmountRaw.val
                   class="input-field"
                   placeholder="10,000,000"
                 />
-                <span class="currency-badge">{{ assetType === 'kr-stock' ? '원' : '$' }}</span>
+                <span class="currency-badge">원</span>
               </div>
             </div>
           </div>
