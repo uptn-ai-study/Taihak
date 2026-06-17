@@ -311,7 +311,8 @@ const canSubmit = () => selectedAsset.value && buyDate.value && buyAmountRaw.val
 .input-field {
   width: 100%; min-width: 0; max-width: 100%; height: 48px; padding: 0 14px;
   background: var(--muted-bg); border: 2px solid transparent;
-  border-radius: 12px; font-size: 14px; font-weight: 600;
+  /* font-size는 16px 이상이어야 iOS Safari가 포커스 시 자동 확대하지 않음 */
+  border-radius: 12px; font-size: 16px; font-weight: 600;
   color: var(--text-1); outline: none; font-family: inherit;
   transition: border-color 0.15s, background 0.15s;
 }
@@ -332,7 +333,7 @@ const canSubmit = () => selectedAsset.value && buyDate.value && buyAmountRaw.val
 }
 
 @media (min-width: 1024px) {
-  .input-field { height: 52px; font-size: 15px; border-radius: 14px; }
+  .input-field { height: 52px; font-size: 16px; border-radius: 14px; }
   /* 데스크톱은 폭이 넉넉하므로 좌우 배치 유지 */
   .row-fields { flex-direction: row; gap: 16px; }
 }
