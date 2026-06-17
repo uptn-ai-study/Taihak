@@ -302,7 +302,8 @@ const canSubmit = () => selectedAsset.value && buyDate.value && buyAmountRaw.val
 /* ══════════════════════════════════════
    입력 필드
 ══════════════════════════════════════ */
-.row-fields { display: flex; gap: 12px; }
+/* 매수 시점·금액은 세로로 쌓아 각 필드가 전체 너비를 사용 (금액 잘림 방지) */
+.row-fields { display: flex; flex-direction: column; gap: 16px; }
 /* min-width:0 — flex 자식이 콘텐츠 최소 너비(특히 iOS date 컨트롤) 밑으로
    줄어들 수 있게 해 좁은 화면에서 필드가 겹치는 문제를 방지 */
 .field { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -332,7 +333,8 @@ const canSubmit = () => selectedAsset.value && buyDate.value && buyAmountRaw.val
 
 @media (min-width: 1024px) {
   .input-field { height: 52px; font-size: 15px; border-radius: 14px; }
-  .row-fields { gap: 16px; }
+  /* 데스크톱은 폭이 넉넉하므로 좌우 배치 유지 */
+  .row-fields { flex-direction: row; gap: 16px; }
 }
 
 /* ══════════════════════════════════════
