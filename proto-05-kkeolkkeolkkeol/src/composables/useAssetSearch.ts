@@ -3,12 +3,12 @@ import type { AssetOption, AssetType } from '../types'
 import { searchKrStocks } from '../data/kr-stocks'
 import { searchUsStockKo, searchCryptoKo, isKorean } from '../data/ko-names'
 
-const YAHOO_SEARCH = 'https://query2.finance.yahoo.com/v1/finance/search'
 const COINGECKO_SEARCH = 'https://api.coingecko.com/api/v3/search'
 
 async function searchUsStock(query: string): Promise<AssetOption[]> {
-  const url = `https://corsproxy.io/?${encodeURIComponent(`${YAHOO_SEARCH}?q=${encodeURIComponent(query)}&quotesCount=10&newsCount=0`)}`
+  const url = `/api/yahoo?type=search&q=${encodeURIComponent(query)}`
   const res = await fetch(url)
+  if (!res.ok) throw new Error('미국 주식 검색에 실패했습니다.')
   const data = await res.json()
   const quotes: Record<string, unknown>[] = data?.quotes ?? []
   return quotes

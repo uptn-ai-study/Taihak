@@ -1,6 +1,5 @@
 import type { AssetOption, CalculationResult } from '../types'
 
-const YAHOO_CHART = 'https://query1.finance.yahoo.com/v8/finance/chart'
 const BINANCE_API = 'https://api.binance.com/api/v3'
 
 // CoinGecko ID → Binance base ticker 매핑
@@ -148,10 +147,10 @@ async function getYahooPrice(
 ): Promise<{ buyPrice: number; currentPrice: number; currency: string }> {
   const buyTs = Math.floor(new Date(date).getTime() / 1000)
   const nowTs = Math.floor(Date.now() / 1000)
-  const url = `https://corsproxy.io/?${encodeURIComponent(
-    `${YAHOO_CHART}/${symbol}?period1=${buyTs - 86400 * 5}&period2=${nowTs}&interval=1d`,
-  )}`
+  const url = `/api/yahoo?type=chart&symbol=${encodeURIComponent(symbol)}` +
+    `&period1=${buyTs - 86400 * 5}&period2=${nowTs}&interval=1d`
   const res = await fetch(url)
+  if (!res.ok) throw new Error('가격 데이터를 불러오는데 실패했습니다.')
   const data = await res.json()
   const chart = data?.chart?.result?.[0]
   if (!chart) throw new Error('가격 데이터를 찾을 수 없습니다.')
