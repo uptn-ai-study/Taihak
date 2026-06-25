@@ -162,15 +162,16 @@ async function getRankPosition(stage: number): Promise<number | null> {
 }
 
 async function handleQuit() {
+  await goHome()
+}
+
+async function goHome() {
   if (sessionBestStage.value > 0) {
     addMyRecord(sessionBestStage.value)
     await saveRanking(nickname.value, sessionBestStage.value)
     sessionBestStage.value = 0
+    sessionPoints.value = 0
   }
-  goHome()
-}
-
-function goHome() {
   screen.value = 'home'
   myRecords.value = getMyRecords()
 }

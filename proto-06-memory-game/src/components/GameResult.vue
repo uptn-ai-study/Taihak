@@ -26,19 +26,6 @@
         <span class="total-value">{{ totalPoints.toLocaleString() }} P</span>
       </div>
 
-      <div v-if="success" class="points-bar-wrap">
-        <div class="points-bar">
-          <div class="points-bar-fill" :style="{ width: barPct + '%' }"></div>
-        </div>
-        <div class="points-bar-labels">
-          <span>{{ (stage * 50).toLocaleString() }}P</span>
-          <span>{{ (stage * 100).toLocaleString() }}P</span>
-        </div>
-        <div class="points-indicator" :style="{ left: barPct + '%' }">
-          <div class="indicator-dot"></div>
-          <span class="indicator-label">{{ earnedPoints.toLocaleString() }}P</span>
-        </div>
-      </div>
     </div>
 
     <div v-if="success" class="compare-card">
@@ -66,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const props = defineProps<{
   stage: number
@@ -88,12 +75,6 @@ defineEmits<{
 const displayedPoints = ref(0)
 const pointsVisible = ref(false)
 
-const barPct = computed(() => {
-  const min = props.stage * 50
-  const max = props.stage * 100
-  if (max <= min) return 0
-  return Math.min(100, Math.max(0, ((props.earnedPoints - min) / (max - min)) * 100))
-})
 
 onMounted(() => {
   setTimeout(() => { pointsVisible.value = true }, 300)
@@ -192,34 +173,6 @@ onMounted(() => {
 .total-label { font-size: 13px; color: #6B7280; }
 .total-value { font-size: 14px; font-weight: 700; color: #111827; }
 
-.points-bar-wrap { position: relative; padding-bottom: 28px; }
-.points-bar { height: 8px; background: #E5E7EB; border-radius: 4px; overflow: hidden; }
-.points-bar-fill {
-  height: 100%; background: linear-gradient(90deg, #5F46FF, #10B981);
-  border-radius: 4px;
-  transition: width 1.3s cubic-bezier(0.25, 1, 0.5, 1);
-}
-.points-bar-labels {
-  display: flex; justify-content: space-between;
-  margin-top: 4px; font-size: 11px; color: #9CA3AF;
-}
-.points-indicator {
-  position: absolute; top: -2px;
-  transform: translateX(-50%);
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  pointer-events: none;
-  transition: left 1.3s cubic-bezier(0.25, 1, 0.5, 1);
-}
-.indicator-dot {
-  width: 12px; height: 12px; border-radius: 50%;
-  background: #5F46FF; border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(95,70,255,0.4);
-}
-.indicator-label {
-  font-size: 11px; font-weight: 700; color: #5F46FF;
-  background: #fff; border: 1px solid #E5E7EB;
-  padding: 1px 6px; border-radius: 4px; white-space: nowrap;
-}
 
 .compare-card {
   width: 100%;
