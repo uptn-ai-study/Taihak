@@ -3,7 +3,7 @@
     <header class="home-header">
       <div class="logo">🧠</div>
       <h1 class="game-title">기억력 테스트</h1>
-      <p class="game-desc">같은 그림 카드를 찾아 모두 매칭하세요!<br/>제한 시간 30초 안에 클리어하면 다음 단계로!</p>
+      <p class="game-desc">같은 그림 카드를 찾아 모두 매칭하세요!<br/>제한시간 안에 클리어하면 다음 단계로!</p>
     </header>
 
     <div class="nickname-row">
