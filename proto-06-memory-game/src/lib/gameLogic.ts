@@ -30,13 +30,10 @@ export function getTimeLimit(stage: number): number {
   return 45
 }
 
-// 단계별 ⭐ 카드 수
-// - 홀수 그리드: 기본 1개, 구간 초반엔 추가
-// - 짝수 그리드: 기본 0개, 구간 초반엔 추가
+// 단계별 ⭐ 카드 수 (10단계 이전은 홀수 그리드 기본 1개만)
 export function getFreeCardCount(stage: number): number {
   const n = getGridSize(stage)
-  if (n === 3) return stage <= 2 ? 3 : 1   // 1~2단계: 3쌍, 3~4단계: 4쌍
-  if (n === 4) return stage <= 7 ? 2 : 0   // 5~7단계: 7쌍, 8~10단계: 8쌍
+  if (stage <= 10) return n % 2 !== 0 ? 1 : 0  // 난이도 조절 별카드 미적용
   if (n === 5) {
     if (stage <= 13) return 5               // 11~13단계: 10쌍
     if (stage <= 16) return 3               // 14~16단계: 11쌍
@@ -58,34 +55,22 @@ export function buildCards(stage: number): Card[] {
   const freeCount = getFreeCardCount(stage)
   const pairCount = (total - freeCount) / 2
 
+  // ⭐ 위치를 랜덤하게 선택
+  const allPositions = Array.from({ length: total }, (_, i) => i)
+    .sort(() => Math.random() - 0.5)
+  const freePositions = new Set(allPositions.slice(0, freeCount))
+
+  // 나머지 위치에 쌍 심볼 배치
   const symbols = SYMBOLS.slice(0, pairCount)
-  const doubled = [...symbols, ...symbols].sort(() => Math.random() - 0.5)
+  const pairedSymbols = [...symbols, ...symbols].sort(() => Math.random() - 0.5)
 
-  const cards: Card[] = doubled.map((symbol, idx) => ({
-    id: idx,
-    symbol,
-    isFlipped: false,
-    isMatched: false,
-    isFree: false,
-  }))
-
-  // ⭐ 카드를 균등 간격으로 삽입
-  if (freeCount > 0) {
-    const step = Math.floor(total / (freeCount + 1))
-    for (let i = freeCount; i >= 1; i--) {
-      const pos = step * i
-      const freeCard: Card = {
-        id: total - i,
-        symbol: '⭐',
-        isFlipped: true,
-        isMatched: true,
-        isFree: true,
-      }
-      cards.splice(pos, 0, freeCard)
+  let symbolIdx = 0
+  return Array.from({ length: total }, (_, idx) => {
+    if (freePositions.has(idx)) {
+      return { id: idx, symbol: '⭐', isFlipped: true, isMatched: true, isFree: true }
     }
-  }
-
-  return cards
+    return { id: idx, symbol: pairedSymbols[symbolIdx++], isFlipped: false, isMatched: false, isFree: false }
+  })
 }
 
 export function formatDate(iso: string): string {
