@@ -86,7 +86,7 @@ import { buildCards, getPairsForStage, getGridSize, getTimeLimit } from '../lib/
 
 const props = defineProps<{ stage: number }>()
 const emit = defineEmits<{
-  success: [stage: number]
+  success: [stage: number, elapsedSeconds: number, flipCount: number]
   fail: [stage: number]
   quit: []
 }>()
@@ -102,6 +102,10 @@ const previewCountdown = ref(3)
 
 let gameTimer: ReturnType<typeof setInterval> | null = null
 let previewTimer: ReturnType<typeof setInterval> | null = null
+let gameStartTime = 0
+let flipCount = 0
+let lastFlipTime = 0
+const MIN_FLIP_INTERVAL = 200 // ms — 이 미만 연속 클릭은 봇으로 판단
 
 const gridSize = computed(() => getGridSize(props.stage))
 const totalPairs = computed(() => getPairsForStage(props.stage))
@@ -163,6 +167,8 @@ function startPreview() {
       // 일반 카드 뒤집기
       cards.value.forEach(c => { if (!c.isFree) c.isFlipped = false })
       phase.value = 'playing'
+      flipCount = 0
+      gameStartTime = Date.now()
       startGameTimer()
     }
   }, 1000)
@@ -170,6 +176,13 @@ function startPreview() {
 
 function flipCard(card: Card) {
   if (card.isFlipped || card.isMatched || isChecking.value || phase.value === 'preview') return
+
+  // 최소 클릭 간격 검사 (봇 방지)
+  const now = Date.now()
+  if (now - lastFlipTime < MIN_FLIP_INTERVAL) return
+  lastFlipTime = now
+  flipCount++
+
   card.isFlipped = true
   flipped.value.push(card)
 
@@ -183,7 +196,8 @@ function flipCard(card: Card) {
       isChecking.value = false
       if (cards.value.filter(c => !c.isFree).every(c => c.isMatched)) {
         clearInterval(gameTimer!)
-        setTimeout(() => emit('success', props.stage), 300)
+        const elapsedSeconds = (Date.now() - gameStartTime) / 1000
+        setTimeout(() => emit('success', props.stage, elapsedSeconds, flipCount), 300)
       }
     } else {
       setTimeout(() => {

@@ -56,6 +56,7 @@ import GameResult from './components/GameResult.vue'
 import NicknameModal from './components/NicknameModal.vue'
 import { getNickname, saveNickname, getMyRecords, addMyRecord, getBestStage, getTotalPoints, addPoints } from './lib/localStorage'
 import { saveRanking, fetchAllTimeRanking } from './lib/supabase'
+import { getPairsForStage } from './lib/gameLogic'
 
 const screen = ref<Screen | 'ad'>('home')
 const nickname = ref('')
@@ -103,8 +104,18 @@ function startStage(stage: number) {
   screen.value = 'game'
 }
 
-async function handleSuccess(stage: number) {
-  sessionBestStage.value = stage
+function isBotSuspected(stage: number, elapsedSeconds: number, flipCount: number): boolean {
+  const pairs = getPairsForStage(stage)
+  const minFlips = pairs * 2                   // 최소 클릭 수
+  const minTime = Math.max(2, pairs * 0.4)     // 최소 소요 시간 (초)
+  return flipCount < minFlips || elapsedSeconds < minTime
+}
+
+async function handleSuccess(stage: number, elapsedSeconds = 999, flipCount = 999) {
+  // 봇 의심 패턴 감지 시 결과만 보여주고 랭킹/기록 저장 차단
+  const botSuspected = isBotSuspected(stage, elapsedSeconds, flipCount)
+
+  sessionBestStage.value = botSuspected ? 0 : stage
 
   const best = getBestStage()
   prevBest.value = best
