@@ -224,9 +224,7 @@ button { font-family: inherit; }
 }
 .fab:active { background: #111827; }
 
-/* ── Leaflet 마커 (divIcon 은 Vue scoped 밖이라 전역 선언) ── */
-.leaflet-container { font-family: inherit; }
-
+/* ── 지도 마커 (카카오 CustomOverlay content 는 Vue scoped 밖이라 전역 선언) ── */
 .animal-marker {
   position: relative;
   width: 44px;

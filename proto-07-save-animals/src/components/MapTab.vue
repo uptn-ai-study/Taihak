@@ -1,76 +1,96 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import L from 'leaflet'
 import { useGameStore } from '../stores/game'
+import { loadKakaoMaps } from '../services/kakaoMap'
 import { markerHtml } from '../services/animalGraphic'
 import type { SpawnedAnimal } from '../types'
 
 const emit = defineEmits<{ select: [animal: SpawnedAnimal] }>()
 const store = useGameStore()
 
+// 카카오 SDK 는 런타임 주입이라 타입 없이 any 로 취급
 const mapEl = ref<HTMLElement | null>(null)
-let map: L.Map | null = null
-let userMarker: L.Marker | null = null
-const animalMarkers = new Map<string, L.Marker>()
+const mapError = ref(false)
+let kakao: any = null
+let map: any = null
+let userOverlay: any = null
+const animalOverlays = new Map<string, any>()
 
-function initMap() {
+const MAP_LEVEL = 6 // 카카오 확대 레벨 (숫자↑ = 더 넓게, 반경 3km 커버)
+
+async function initMap() {
   if (!store.location || !mapEl.value || map) return
   const { lat, lng } = store.location
 
-  map = L.map(mapEl.value, {
-    center: [lat, lng],
-    zoom: 15,
-    zoomControl: false,
-    attributionControl: false,
-  })
+  try {
+    kakao = await loadKakaoMaps()
+  } catch (e) {
+    console.error(e)
+    mapError.value = true
+    return
+  }
+  // 로드 대기 중 언마운트/중복 방지
+  if (!mapEl.value || map) return
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-  }).addTo(map)
+  map = new kakao.maps.Map(mapEl.value, {
+    center: new kakao.maps.LatLng(lat, lng),
+    level: MAP_LEVEL,
+  })
 
   // 내 위치 마커
-  const userIcon = L.divIcon({
-    className: 'user-marker-wrap',
-    html: '<div class="user-marker"><div class="user-marker__dot"></div></div>',
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
+  const userContent = document.createElement('div')
+  userContent.innerHTML = '<div class="user-marker"><div class="user-marker__dot"></div></div>'
+  userOverlay = new kakao.maps.CustomOverlay({
+    position: new kakao.maps.LatLng(lat, lng),
+    content: userContent,
+    xAnchor: 0.5,
+    yAnchor: 0.5,
+    zIndex: 1,
   })
-  userMarker = L.marker([lat, lng], { icon: userIcon, interactive: false }).addTo(map)
+  userOverlay.setMap(map)
 
   renderAnimals()
 }
 
 function renderAnimals() {
-  if (!map) return
+  if (!map || !kakao) return
   const visible = store.visibleAnimals
   const visibleIds = new Set(visible.map((a) => a.id))
 
   // 제거된(구조 처리된) 마커 삭제
-  for (const [id, marker] of animalMarkers) {
+  for (const [id, overlay] of animalOverlays) {
     if (!visibleIds.has(id)) {
-      marker.remove()
-      animalMarkers.delete(id)
+      overlay.setMap(null)
+      animalOverlays.delete(id)
     }
   }
 
   // 신규 마커 추가
   for (const animal of visible) {
-    if (animalMarkers.has(animal.id)) continue
-    const icon = L.divIcon({
-      className: 'animal-marker-wrap',
-      html: markerHtml(animal.speciesId, animal.grade),
-      iconSize: [44, 52],
-      iconAnchor: [22, 48],
+    if (animalOverlays.has(animal.id)) continue
+    const el = document.createElement('div')
+    el.className = 'animal-marker-wrap'
+    el.style.cursor = 'pointer'
+    el.innerHTML = markerHtml(animal.speciesId, animal.grade)
+    el.addEventListener('click', () => emit('select', animal))
+
+    const overlay = new kakao.maps.CustomOverlay({
+      position: new kakao.maps.LatLng(animal.lat, animal.lng),
+      content: el,
+      xAnchor: 0.5,
+      yAnchor: 1,
+      zIndex: 2,
+      clickable: true,
     })
-    const marker = L.marker([animal.lat, animal.lng], { icon }).addTo(map)
-    marker.on('click', () => emit('select', animal))
-    animalMarkers.set(animal.id, marker)
+    overlay.setMap(map)
+    animalOverlays.set(animal.id, overlay)
   }
 }
 
 function recenter() {
-  if (map && store.location) {
-    map.setView([store.location.lat, store.location.lng], 15, { animate: true })
+  if (map && kakao && store.location) {
+    map.setLevel(MAP_LEVEL)
+    map.panTo(new kakao.maps.LatLng(store.location.lat, store.location.lng))
   }
 }
 
@@ -92,9 +112,10 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  map?.remove()
+  for (const overlay of animalOverlays.values()) overlay.setMap(null)
+  animalOverlays.clear()
+  userOverlay?.setMap(null)
   map = null
-  animalMarkers.clear()
 })
 </script>
 
@@ -124,8 +145,15 @@ onBeforeUnmount(() => {
     <!-- 지도 -->
     <div ref="mapEl" class="map-canvas"></div>
 
+    <!-- 지도 로드 실패 (예: 카카오 도메인 미등록) -->
+    <div v-if="mapError" class="map-error">
+      <div class="empty-icon">🗺️</div>
+      <p class="empty-text">지도를 불러오지 못했어요</p>
+      <p class="empty-sub">잠시 후 다시 시도해주세요</p>
+    </div>
+
     <!-- 로딩 상태 -->
-    <div v-if="store.locationLoading" class="map-loading">
+    <div v-else-if="store.locationLoading" class="map-loading">
       <div class="spinner"></div>
       <p class="t-body2">내 주변 위기 동물을 찾는 중…</p>
     </div>
@@ -210,7 +238,8 @@ onBeforeUnmount(() => {
   box-shadow: var(--shadow-1);
 }
 .map-loading,
-.map-empty {
+.map-empty,
+.map-error {
   position: absolute;
   inset: 0;
   z-index: 15;

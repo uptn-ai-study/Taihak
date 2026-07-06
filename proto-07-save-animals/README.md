@@ -5,7 +5,7 @@
 
 ## 기술 스택
 - Vue 3 (`<script setup>`, Composition API) + TypeScript + Vite
-- 지도: Leaflet + OpenStreetMap (키 불필요)
+- 지도: 카카오맵 JS SDK (`.env` 의 `VITE_KAKAO_MAP_KEY` 필요)
 - 상태/저장: Pinia + localStorage (서버·로그인 없음)
 
 ## 실행
