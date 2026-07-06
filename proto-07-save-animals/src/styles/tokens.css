@@ -1,0 +1,283 @@
+/* ─────────────────────────────────────────────────────────────
+   team-rules / UI-COMMON.md 기준 공통 토큰
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Color */
+  --primary:       #5F46FF;
+  --primary-dark:  #4A35E0;
+  --primary-light: #EEEAFF;
+  --primary-200:   #F2F0FF;
+  --primary-dim:   rgba(95, 70, 255, 0.10);
+  --card-bg:       #FFFFFF;
+  --muted-bg:      #F5F5F8;
+  --border:        #E5E7EB;
+  --text-1:        #111827;
+  --text-2:        #6B7280;
+  --text-3:        #9CA3AF;
+  --success:       #10B981;
+  --error:         #EF4444;
+  --overlay:       rgba(0, 0, 0, 0.50);
+
+  /* Spacing (4px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radius */
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   20px;
+  --radius-2xl:  24px;
+  --radius-full: 9999px;
+
+  /* Shadow */
+  --shadow-1: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.10);
+  --shadow-3: 0 -4px 24px rgba(0, 0, 0, 0.10);
+  --shadow-fab: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #E9E7F2;
+}
+
+body {
+  font-family: 'SUIT Variable', 'SUIT', -apple-system, sans-serif;
+  color: var(--text-1);
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font-family: inherit; }
+
+/* 앱 셸 — 390px 기준 */
+#app {
+  max-width: 390px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--muted-bg);
+  position: relative;
+}
+
+/* ── Typography helpers ───────────────────────────────────── */
+.t-title1   { font-size: 28px; font-weight: 700; letter-spacing: -0.3px; color: var(--text-1); }
+.t-title2   { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; color: var(--text-1); }
+.t-title3   { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; color: var(--text-1); }
+.t-title4   { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; color: var(--text-1); }
+.t-body1    { font-size: 15px; font-weight: 400; color: var(--text-1); }
+.t-body2    { font-size: 14px; font-weight: 400; color: var(--text-2); }
+.t-caption1 { font-size: 13px; font-weight: 400; letter-spacing: -0.2px; color: var(--text-2); }
+.t-caption2 { font-size: 12px; font-weight: 400; letter-spacing: -0.2px; color: var(--text-3); }
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.btn-primary {
+  width: 100%; height: 56px;
+  background: var(--primary); color: #fff;
+  font-size: 16px; font-weight: 700; letter-spacing: -0.3px;
+  border-radius: var(--radius-md); border: none; cursor: pointer;
+}
+.btn-primary:active { background: var(--primary-dark); }
+.btn-primary:disabled { background: #C7C9D1; cursor: not-allowed; }
+
+.btn-row { display: flex; gap: 10px; width: 100%; }
+
+.btn-primary-md {
+  flex: 1; height: 48px;
+  background: var(--primary); color: #fff;
+  font-size: 15px; font-weight: 600; letter-spacing: -0.3px;
+  border-radius: var(--radius-md); border: none; cursor: pointer;
+}
+.btn-primary-md:active { background: var(--primary-dark); }
+
+.btn-secondary {
+  flex: 1; height: 48px;
+  background: var(--primary-200); color: var(--primary);
+  font-size: 15px; font-weight: 700; letter-spacing: -0.3px;
+  border-radius: var(--radius-md); border: none; cursor: pointer;
+}
+
+.btn-gray {
+  flex: 1; height: 44px;
+  background: var(--muted-bg); color: var(--text-2);
+  border: 1px solid var(--border);
+  font-size: 13px; font-weight: 600; letter-spacing: -0.3px;
+  border-radius: var(--radius-md); cursor: pointer;
+}
+
+.btn-text {
+  background: none; border: none;
+  color: var(--primary); font-size: 15px; font-weight: 500;
+  cursor: pointer; padding: 0 4px;
+}
+
+/* ── Card ─────────────────────────────────────────────────── */
+.card {
+  background: var(--card-bg); border-radius: var(--radius-lg);
+  padding: var(--space-4); box-shadow: var(--shadow-1);
+}
+
+.info-row-card {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; background: var(--card-bg);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+}
+.info-row-label { font-size: 14px; color: var(--text-2); }
+.info-row-value { font-size: 14px; font-weight: 600; color: var(--text-1); }
+
+/* ── Chip ─────────────────────────────────────────────────── */
+.chip {
+  border: 1.5px solid var(--primary); color: var(--primary);
+  font-size: 13px; font-weight: 500;
+  border-radius: var(--radius-full); padding: 6px 14px;
+  background: transparent; cursor: pointer; white-space: nowrap;
+}
+.chip.active { background: var(--primary); color: #fff; }
+
+/* ── Badge ────────────────────────────────────────────────── */
+.badge-primary { background: var(--primary); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 6px; }
+.badge-success { background: var(--success); color: #fff; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; }
+.badge-error   { background: var(--error);   color: #fff; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; }
+
+/* ── List item ────────────────────────────────────────────── */
+.list-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--card-bg); border-radius: var(--radius-lg);
+  padding: 16px; box-shadow: var(--shadow-1);
+}
+.list-thumb {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: var(--primary-light);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; flex-shrink: 0;
+}
+.list-info  { flex: 1; min-width: 0; }
+.list-title { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; color: var(--text-1); }
+.list-sub   { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+.list-arrow { font-size: 14px; color: var(--text-3); }
+
+/* ── Empty state ──────────────────────────────────────────── */
+.empty-state {
+  display: flex; flex-direction: column;
+  align-items: center; padding: 48px 20px; gap: 10px;
+}
+.empty-icon { font-size: 48px; opacity: .35; }
+.empty-text { font-size: 16px; font-weight: 700; color: var(--text-2); }
+.empty-sub  { font-size: 13px; color: var(--text-3); }
+
+/* ── Bottom sheet ─────────────────────────────────────────── */
+.bs-overlay {
+  position: fixed; inset: 0;
+  background: var(--overlay);
+  display: flex; align-items: flex-end;
+  z-index: 200;
+  max-width: 390px; margin: 0 auto;
+}
+.bs-sheet {
+  width: 100%;
+  background: var(--card-bg);
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  padding: 12px 20px calc(28px + env(safe-area-inset-bottom));
+  box-shadow: var(--shadow-3);
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.32, 1, .55, 1);
+}
+.bs-sheet.open { transform: translateY(0); }
+.bs-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; }
+.bs-header {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 0 4px;
+}
+.bs-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+.bs-close {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--muted-bg); border: 1px solid var(--border);
+  font-size: 13px; color: var(--text-2); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── 애니메이션 ───────────────────────────────────────────── */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.fade-in { animation: fadeIn .2s ease both; }
+
+/* ── FAB ──────────────────────────────────────────────────── */
+.fab {
+  background: #1F2937; width: 52px; height: 52px;
+  border-radius: var(--radius-full); box-shadow: var(--shadow-fab);
+  display: flex; align-items: center; justify-content: center;
+  border: none; cursor: pointer;
+}
+.fab:active { background: #111827; }
+
+/* ── Leaflet 마커 (divIcon 은 Vue scoped 밖이라 전역 선언) ── */
+.leaflet-container { font-family: inherit; }
+
+.animal-marker {
+  position: relative;
+  width: 44px;
+  height: 52px;
+  animation: markerDrop .3s cubic-bezier(.34,1.56,.64,1) both;
+}
+.animal-marker__pin {
+  width: 40px;
+  height: 40px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: #fff;
+  border: 3px solid var(--g);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+.animal-marker__emoji {
+  transform: rotate(45deg);
+  font-size: 20px;
+  line-height: 1;
+}
+.animal-marker__grade {
+  position: absolute;
+  top: -4px;
+  right: -2px;
+  font-size: 15px;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
+}
+.animal-marker:active .animal-marker__pin { transform: rotate(-45deg) scale(0.92); }
+@keyframes markerDrop {
+  from { transform: translateY(-12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.user-marker {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(95,70,255,0.20);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.user-marker__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--primary);
+}
