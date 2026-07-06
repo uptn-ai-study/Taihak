@@ -221,11 +221,23 @@ onBeforeUnmount(() => {
   gap: 10px;
   background: rgba(245, 245, 248, 0.9);
 }
+/* 모두 구조 완료 — 지도 위 10% 투명 레이어 + 그 위에 안내 문구 */
 .map-empty {
-  background: none;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.10);
   pointer-events: none;
-  top: 40%;
-  bottom: auto;
+}
+.map-empty .empty-icon {
+  opacity: 0.9;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+}
+.map-empty .empty-text {
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+.map-empty .empty-sub {
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 .spinner {
   width: 36px;
