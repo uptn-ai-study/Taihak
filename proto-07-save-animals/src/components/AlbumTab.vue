@@ -1,40 +1,53 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useGameStore } from '../stores/game'
-import { GRADE_LIST, GRADES, getSpecies } from '../config/gameConfig'
-import type { RescueRecord } from '../types'
+import { GRADES, getSpecies } from '../config/gameConfig'
+import type { Grade, RescueRecord } from '../types'
 import AnimalAvatar from './AnimalAvatar.vue'
 
 const store = useGameStore()
 
-type Filter = { key: string; label: string }
-const filters = computed<Filter[]>(() => [
-  { key: 'all', label: '전체' },
-  ...GRADE_LIST.map((g) => ({ key: `grade:${g.id}`, label: g.name })),
-])
+interface SpeciesGroup {
+  speciesId: string
+  name: string
+  count: number
+  totalMedals: number
+  maxGrade: Grade      // 대표 아바타용 — 가장 높은 등급
+  records: RescueRecord[] // 최신순
+}
 
-const active = ref('all')
-
-const filtered = computed<RescueRecord[]>(() => {
-  const records = store.rescueRecords
-  if (active.value === 'all') return records
-  if (active.value.startsWith('grade:')) {
-    const g = Number(active.value.split(':')[1])
-    return records.filter((r) => r.grade === g)
+// 종류별로 묶기 (구조 많은 순 → 이름순)
+const groups = computed<SpeciesGroup[]>(() => {
+  const map = new Map<string, SpeciesGroup>()
+  for (const r of store.rescueRecords) {
+    let g = map.get(r.speciesId)
+    if (!g) {
+      g = {
+        speciesId: r.speciesId,
+        name: getSpecies(r.speciesId).name,
+        count: 0,
+        totalMedals: 0,
+        maxGrade: 1,
+        records: [],
+      }
+      map.set(r.speciesId, g)
+    }
+    g.count += 1
+    g.totalMedals += r.medalReward
+    g.maxGrade = Math.max(g.maxGrade, r.grade) as Grade
+    g.records.push(r)
   }
-  return records
+  // 각 종류의 기록은 최신순으로 정렬 (입력 순서와 무관하게 보장)
+  for (const g of map.values()) {
+    g.records.sort((a, b) => b.rescuedAt.localeCompare(a.rescuedAt))
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 })
 
-const selected = ref<RescueRecord | null>(null)
-const sheetOpen = ref(false)
-function openDetail(r: RescueRecord) {
-  selected.value = r
-  requestAnimationFrame(() => (sheetOpen.value = true))
-}
-function closeDetail() {
-  sheetOpen.value = false
-  setTimeout(() => (selected.value = null), 260)
-}
+const selectedSpecies = ref<string | null>(null)
+const detail = computed<SpeciesGroup | null>(
+  () => groups.value.find((g) => g.speciesId === selectedSpecies.value) ?? null,
+)
 
 function formatDate(iso: string): string {
   const d = new Date(iso)
@@ -45,88 +58,72 @@ function formatDate(iso: string): string {
 
 <template>
   <div class="album-tab">
-    <header class="album-head">
-      <h1 class="t-title2">구조 앨범</h1>
-      <span class="album-count">총 {{ store.rescueRecords.length }}마리</span>
-    </header>
+    <!-- ── 종류별 컬렉션 ─────────────────────────── -->
+    <template v-if="!detail">
+      <header class="album-head">
+        <h1 class="t-title2">구조 앨범</h1>
+        <span class="album-count">{{ groups.length }}종 · 총 {{ store.rescueRecords.length }}마리</span>
+      </header>
 
-    <!-- 필터 칩 -->
-    <div class="chip-row">
-      <button
-        v-for="f in filters"
-        :key="f.key"
-        class="chip"
-        :class="{ active: active === f.key }"
-        @click="active = f.key"
-      >
-        {{ f.label }}
-      </button>
-    </div>
+      <div v-if="groups.length" class="species-grid">
+        <button
+          v-for="g in groups"
+          :key="g.speciesId"
+          class="species-card"
+          @click="selectedSpecies = g.speciesId"
+        >
+          <span class="species-count-badge">{{ g.count }}번</span>
+          <AnimalAvatar :species-id="g.speciesId" :grade="g.maxGrade" :size="60" />
+          <span class="species-name">{{ g.name }}</span>
+          <span class="species-medals">🏅 {{ g.totalMedals }}</span>
+        </button>
+      </div>
 
-    <!-- 리스트 -->
-    <div v-if="filtered.length" class="album-list">
-      <button
-        v-for="r in filtered"
-        :key="r.id"
-        class="list-item album-item"
-        @click="openDetail(r)"
-      >
-        <AnimalAvatar :species-id="r.speciesId" :grade="r.grade" :size="48" />
-        <div class="list-info">
-          <div class="album-title-row">
-            <span class="list-title">{{ getSpecies(r.speciesId).name }}</span>
-            <span class="mini-badge" :style="{ background: GRADES[r.grade].color }">
-              {{ GRADES[r.grade].name }}
-            </span>
+      <div v-else class="empty-state">
+        <div class="empty-icon">📖</div>
+        <p class="empty-text">아직 구조한 동물이 없어요</p>
+        <p class="empty-sub">지도에서 위기 동물을 구조해보세요</p>
+      </div>
+    </template>
+
+    <!-- ── 종류 상세 (구조 기록 리스트) ──────────── -->
+    <template v-else>
+      <header class="detail-head">
+        <button class="back-btn" @click="selectedSpecies = null" aria-label="뒤로">←</button>
+        <h1 class="t-title3">{{ detail.name }}</h1>
+      </header>
+
+      <div class="detail-summary card">
+        <AnimalAvatar :species-id="detail.speciesId" :grade="detail.maxGrade" :size="64" />
+        <div class="summary-stats">
+          <div class="summary-item">
+            <span class="summary-num">{{ detail.count }}</span>
+            <span class="summary-label">구조 횟수</span>
           </div>
-          <div class="list-sub">{{ formatDate(r.rescuedAt) }} · {{ r.locationName }}</div>
-        </div>
-        <span class="list-medal">+{{ r.medalReward }}</span>
-      </button>
-    </div>
-
-    <!-- 빈 상태 -->
-    <div v-else class="empty-state">
-      <div class="empty-icon">📖</div>
-      <p class="empty-text">{{ active === 'all' ? '아직 구조한 동물이 없어요' : '해당 등급 기록이 없어요' }}</p>
-      <p class="empty-sub" v-if="active === 'all'">지도에서 위기 동물을 구조해보세요</p>
-    </div>
-  </div>
-
-  <!-- 상세 바텀시트 -->
-  <div v-if="selected" class="bs-overlay" @click.self="closeDetail">
-    <div class="bs-sheet" :class="{ open: sheetOpen }">
-      <div class="bs-handle"></div>
-      <div class="bs-header">
-        <span class="bs-title">구조 기록</span>
-        <button class="bs-close" @click="closeDetail">✕</button>
-      </div>
-
-      <AnimalAvatar :species-id="selected.speciesId" :grade="selected.grade" :size="80" />
-      <div class="detail-name">
-        <span class="t-title3">{{ getSpecies(selected.speciesId).name }}</span>
-        <span class="mini-badge" :style="{ background: GRADES[selected.grade].color }">
-          {{ GRADES[selected.grade].emoji }} {{ GRADES[selected.grade].name }}
-        </span>
-      </div>
-
-      <div class="detail-rows">
-        <div class="info-row-card">
-          <span class="info-row-label">획득 메달</span>
-          <span class="info-row-value">🏅 {{ selected.medalReward }}</span>
-        </div>
-        <div class="info-row-card">
-          <span class="info-row-label">구조 일시</span>
-          <span class="info-row-value">{{ formatDate(selected.rescuedAt) }}</span>
-        </div>
-        <div class="info-row-card">
-          <span class="info-row-label">구조 지역</span>
-          <span class="info-row-value">{{ selected.locationName }}</span>
+          <div class="summary-divider"></div>
+          <div class="summary-item">
+            <span class="summary-num">{{ detail.totalMedals }}</span>
+            <span class="summary-label">획득 메달</span>
+          </div>
         </div>
       </div>
 
-      <button class="btn-primary" @click="closeDetail">닫기</button>
-    </div>
+      <p class="record-title">구조 기록</p>
+      <div class="record-list">
+        <div v-for="r in detail.records" :key="r.id" class="list-item record-item">
+          <div class="record-grade" :style="{ background: GRADES[r.grade].color }">
+            {{ GRADES[r.grade].emoji }}
+          </div>
+          <div class="list-info">
+            <div class="record-top">
+              <span class="record-grade-name">{{ GRADES[r.grade].name }}</span>
+              <span class="record-medal">+{{ r.medalReward }} 메달</span>
+            </div>
+            <div class="list-sub">{{ formatDate(r.rescuedAt) }} · {{ r.locationName }}</div>
+          </div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -136,71 +133,166 @@ function formatDate(iso: string): string {
   inset: 0;
   bottom: calc(60px + env(safe-area-inset-bottom));
   overflow-y: auto;
-  padding: calc(16px + env(safe-area-inset-top)) 0 20px;
+  padding: calc(16px + env(safe-area-inset-top)) 20px 24px;
 }
+
+/* 헤더 */
 .album-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding: 0 20px;
+  margin-bottom: 16px;
 }
 .album-count {
   font-size: 13px;
   color: var(--text-2);
   font-weight: 600;
 }
-.chip-row {
+
+/* 종류별 그리드 */
+.species-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.species-card {
+  position: relative;
+  background: var(--card-bg);
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  padding: 20px 12px 16px;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
-  padding: 14px 20px 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
+  cursor: pointer;
 }
-.chip-row::-webkit-scrollbar {
-  display: none;
+.species-card:active {
+  background: var(--muted-bg);
 }
-.album-list {
+.species-count-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: var(--radius-full);
+}
+.species-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text-1);
+  margin-top: 2px;
+}
+.species-medals {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* 상세 헤더 */
+.detail-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.back-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  font-size: 18px;
+  color: var(--text-1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.back-btn:active {
+  background: var(--muted-bg);
+}
+
+/* 상세 요약 카드 */
+.detail-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.summary-stats {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+.summary-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.summary-num {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-1);
+  letter-spacing: -0.5px;
+}
+.summary-label {
+  font-size: 12px;
+  color: var(--text-2);
+}
+.summary-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--border);
+}
+
+/* 기록 리스트 */
+.record-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-2);
+  margin: 0 0 10px 2px;
+}
+.record-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 10px 20px 0;
 }
-.album-item {
-  width: 100%;
-  border: none;
-  text-align: left;
-  cursor: pointer;
+.record-item {
+  gap: 12px;
 }
-.album-item:active {
-  background: var(--muted-bg);
-}
-.album-title-row {
+.record-grade {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-.mini-badge {
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-}
-.list-medal {
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--primary);
+  justify-content: center;
+  font-size: 20px;
   flex-shrink: 0;
 }
-.detail-name {
+.record-top {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
 }
-.detail-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
+.record-grade-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+.record-medal {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--primary);
 }
 </style>
