@@ -250,10 +250,10 @@ onBeforeUnmount(() => {
   gap: 10px;
   background: rgba(245, 245, 248, 0.9);
 }
-/* 모두 구조 완료 — 지도 위 10% 투명 레이어 + 그 위에 안내 문구 */
+/* 모두 구조 완료 — 지도 위 80% 투명 레이어 + 그 위에 안내 문구 */
 .map-empty {
   inset: 0;
-  background: rgba(0, 0, 0, 0.10);
+  background: rgba(0, 0, 0, 0.80);
   pointer-events: none;
 }
 .map-empty .empty-icon {
