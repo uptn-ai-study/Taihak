@@ -4,10 +4,11 @@
 
 import { defineStore } from 'pinia'
 import type { LatLng, RescueRecord, RescueResult, SpawnedAnimal } from '../types'
-import { ATTENDANCE, DAILY, GRADES } from '../config/gameConfig'
+import { ATTENDANCE, DAILY, GRADES, SPAWN } from '../config/gameConfig'
 import { loadProgress, saveProgress, today, yesterday } from '../services/storage'
 import { getCurrentLocation, getLocationName } from '../services/geo'
 import { getSpawnWindow, spawnAnimals } from '../services/animalSpawner'
+import { EMPTY_WATER, fetchWaterContext, type WaterContext } from '../services/terrain'
 
 interface AttendanceInfo {
   streakDays: number
@@ -22,6 +23,7 @@ interface State {
   locationLoading: boolean
   spawnWindow: number
   animals: SpawnedAnimal[]
+  water: WaterContext                 // 주변 물(강·바다) 좌표 — 서식지별 배치에 사용
   attendance: AttendanceInfo | null   // null 이면 출석 모달 미표시
 }
 
@@ -33,6 +35,7 @@ export const useGameStore = defineStore('game', {
     locationLoading: true,
     spawnWindow: getSpawnWindow(),
     animals: [],
+    water: EMPTY_WATER,
     attendance: null,
   }),
 
@@ -97,12 +100,16 @@ export const useGameStore = defineStore('game', {
       this.persist()
     },
 
-    /** 위치 획득 후 동물 스폰 */
+    /** 위치 획득 → 주변 지형(물) 조회 → 동물 스폰 */
     async initLocation() {
       this.locationLoading = true
       const result = await getCurrentLocation()
       this.location = result.location
       this.locationMessage = result.message
+
+      // 서식지별 배치를 위해 주변 강·바다 좌표를 먼저 확보 (실패해도 육지 동물은 출현)
+      this.water = await fetchWaterContext(this.location, SPAWN.minRadiusM, SPAWN.maxRadiusM)
+
       this.refreshAnimals()
       this.locationLoading = false
     },
@@ -117,7 +124,7 @@ export const useGameStore = defineStore('game', {
         this.progress.handledAnimalIds = []
         this.persist()
       }
-      this.animals = spawnAnimals(this.location, win)
+      this.animals = spawnAnimals(this.location, win, this.water)
     },
 
     /**

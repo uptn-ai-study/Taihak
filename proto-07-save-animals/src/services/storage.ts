@@ -2,9 +2,12 @@
 // localStorage 캡슐화 — 나중에 서버 API 로 교체하기 쉽게 이 한 곳에 격리
 // ─────────────────────────────────────────────────────────────
 
-import type { UserProgress } from '../types'
+import type { UserProgress, WaterContext } from '../types'
 
 const STORAGE_KEY = 'save-animals::progress'
+const WATER_KEY_PREFIX = 'save-animals::water::'
+/** 물 지형은 자주 바뀌지 않으므로 길게 캐시 (Overpass 요청 최소화) */
+const WATER_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 /** 로컬 자정 기준 오늘 날짜 문자열 (YYYY-MM-DD) */
 export function today(): string {
@@ -61,4 +64,42 @@ export function saveProgress(progress: UserProgress): void {
 
 export function resetProgress(): void {
   localStorage.removeItem(STORAGE_KEY)
+}
+
+// ── 물(지형) 캐시 ────────────────────────────────────────────
+// Overpass 는 무료 공용 API 라 요청이 잦으면 429/504 가 난다.
+// 지형은 거의 변하지 않으므로 위치 격자 단위로 오래 캐시한다.
+
+export interface CachedWater {
+  data: WaterContext
+  savedAt: number
+  /** TTL 이 지났는지 — 지났어도 조회 실패 시 폴백용으로 쓸 수 있다 */
+  stale: boolean
+}
+
+export function loadWaterCache(key: string): CachedWater | null {
+  try {
+    const raw = localStorage.getItem(WATER_KEY_PREFIX + key)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { data: WaterContext; savedAt: number }
+    if (!parsed?.data) return null
+    return {
+      data: parsed.data,
+      savedAt: parsed.savedAt,
+      stale: Date.now() - parsed.savedAt > WATER_TTL_MS,
+    }
+  } catch {
+    return null
+  }
+}
+
+export function saveWaterCache(key: string, data: WaterContext): void {
+  try {
+    localStorage.setItem(
+      WATER_KEY_PREFIX + key,
+      JSON.stringify({ data, savedAt: Date.now() }),
+    )
+  } catch {
+    // 용량 초과 등은 무시 — 캐시는 없어도 동작
+  }
 }

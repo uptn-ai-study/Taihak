@@ -75,6 +75,9 @@ function formatDate(iso: string): string {
           <span class="species-count-badge">{{ g.count }}번</span>
           <AnimalAvatar :species-id="g.speciesId" :grade="g.maxGrade" :size="60" />
           <span class="species-name">{{ g.name }}</span>
+          <span class="species-grade" :style="{ background: GRADES[g.maxGrade].color }">
+            {{ GRADES[g.maxGrade].emoji }} {{ GRADES[g.maxGrade].shortName }}
+          </span>
           <span class="species-medals">🏅 {{ g.totalMedals }}</span>
         </button>
       </div>
@@ -188,6 +191,13 @@ function formatDate(iso: string): string {
   letter-spacing: -0.3px;
   color: var(--text-1);
   margin-top: 2px;
+}
+.species-grade {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
 }
 .species-medals {
   font-size: 13px;

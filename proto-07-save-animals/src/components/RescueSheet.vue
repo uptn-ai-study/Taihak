@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useGameStore } from '../stores/game'
-import { GRADES, getSpecies } from '../config/gameConfig'
+import { GRADES, HABITAT_LABEL, getSpecies } from '../config/gameConfig'
+import { getSpeciesInfo } from '../config/speciesInfo'
 import type { RescueResult, SpawnedAnimal } from '../types'
 import AnimalAvatar from './AnimalAvatar.vue'
 import AdModal from './AdModal.vue'
@@ -12,6 +13,8 @@ const emit = defineEmits<{ close: [] }>()
 const store = useGameStore()
 const species = computed(() => getSpecies(props.animal.speciesId))
 const grade = computed(() => GRADES[props.animal.grade])
+const info = computed(() => getSpeciesInfo(props.animal.speciesId))
+const showDetail = ref(false)
 
 type Phase = 'info' | 'judging' | 'result'
 const phase = ref<Phase>('info')
@@ -51,7 +54,7 @@ function close() {
 
 <template>
   <div class="bs-overlay" @click.self="phase !== 'judging' && close()">
-    <div class="bs-sheet" :class="{ open }">
+    <div class="bs-sheet rescue-sheet" :class="{ open }">
       <div class="bs-handle"></div>
 
       <!-- 1. 동물 정보 -->
@@ -69,6 +72,11 @@ function close() {
             {{ grade.emoji }} {{ grade.name }}
           </span>
         </div>
+        <span class="taxon-line">
+          {{ species.taxon }} · {{ HABITAT_LABEL[species.habitat] }} · {{ grade.spawnLabel }}
+        </span>
+
+        <p class="species-intro">{{ info.intro }}</p>
 
         <div class="stat-grid">
           <div class="stat">
@@ -78,6 +86,37 @@ function close() {
           <div class="stat">
             <span class="stat-label">성공 확률</span>
             <span class="stat-value">{{ Math.round(grade.successRate * 100) }}%</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">구조 난이도</span>
+            <span class="stat-value" :style="{ color: grade.color }">{{ grade.difficultyLabel }}</span>
+          </div>
+        </div>
+
+        <div v-if="species.status !== 'common'" class="endangered-note" :style="{ borderColor: grade.color }">
+          <b :style="{ color: grade.color }">{{ grade.name }}</b> {{ grade.desc }}
+        </div>
+
+        <!-- 학습 — 국립생태원 자료 항목(형태·생태·분포·위협요인) 기반 -->
+        <button class="info-toggle" @click="showDetail = !showDetail">
+          🔎 {{ species.name }} 알아보기 {{ showDetail ? '▲' : '▼' }}
+        </button>
+        <div v-if="showDetail" class="info-rows">
+          <div class="info-row">
+            <span class="info-k">생김새</span>
+            <span class="info-v">{{ info.form }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-k">사는 법</span>
+            <span class="info-v">{{ info.ecology }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-k">사는 곳</span>
+            <span class="info-v">{{ info.habitat }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-k">위험해요</span>
+            <span class="info-v">{{ info.threat }}</span>
           </div>
         </div>
 
@@ -126,10 +165,18 @@ function close() {
 </template>
 
 <style scoped>
+/* 소개를 펼쳐도 버튼까지 볼 수 있도록 시트 자체를 스크롤 */
+.rescue-sheet {
+  max-height: 88dvh;
+  overflow-y: auto;
+}
+
+/* 이름과 등급은 줄바꿈해 세로로 배치 */
 .name-row {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .grade-badge {
   color: #fff;
@@ -158,8 +205,75 @@ function close() {
   color: var(--text-2);
 }
 .stat-value {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
+  color: var(--text-1);
+  white-space: nowrap;
+}
+.taxon-line {
+  font-size: 13px;
+  color: var(--text-2);
+  margin-top: -8px;
+}
+.endangered-note {
+  width: 100%;
+  background: var(--muted-bg);
+  border-left: 3px solid;
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+  text-align: left;
+}
+
+/* 소개 (학습) */
+.species-intro {
+  margin: -6px 0 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+  text-align: center;
+}
+.info-toggle {
+  width: 100%;
+  height: 44px;
+  background: var(--primary-200);
+  color: var(--primary);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.info-toggle:active {
+  background: var(--primary-light);
+}
+.info-rows {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--muted-bg);
+  border-radius: var(--radius-md);
+  padding: 14px 12px;
+}
+.info-row {
+  display: flex;
+  gap: 10px;
+  text-align: left;
+}
+.info-k {
+  flex-shrink: 0;
+  width: 54px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.info-v {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.55;
   color: var(--text-1);
 }
 .ad-note,
