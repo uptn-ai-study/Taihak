@@ -40,9 +40,12 @@ function onAdDone() {
 
 async function doRescue(viaAd: boolean) {
   phase.value = 'judging'
-  // 판정 연출용 짧은 딜레이
-  await new Promise((r) => setTimeout(r, 900))
-  result.value = await store.rescue(props.animal, viaAd)
+  // 링이 차오르는 시간(0.9s)과 판정을 동시에 진행 → 링이 다 차는 시점에 결과 표시
+  const [res] = await Promise.all([
+    store.rescue(props.animal, viaAd),
+    new Promise((r) => setTimeout(r, 900)),
+  ])
+  result.value = res
   phase.value = 'result'
 }
 
@@ -132,11 +135,21 @@ function close() {
         </button>
       </template>
 
-      <!-- 2. 판정 중 -->
+      <!-- 2. 판정 중 — 진행 링이 동물 이미지의 테두리 자리를 대신한다 -->
       <template v-else-if="phase === 'judging'">
         <div class="judging">
-          <div class="spinner"></div>
-          <AnimalAvatar :species-id="animal.speciesId" :grade="animal.grade" :size="72" />
+          <div class="progress-stage" :style="{ '--g': grade.color }">
+            <svg class="progress-ring" viewBox="0 0 92 92" aria-hidden="true">
+              <circle class="ring-track" cx="46" cy="46" r="39" />
+              <circle class="ring-bar" cx="46" cy="46" r="39" />
+            </svg>
+            <AnimalAvatar
+              :species-id="animal.speciesId"
+              :grade="animal.grade"
+              :size="72"
+              :ring="false"
+            />
+          </div>
           <p class="t-body1">구조 시도 중…</p>
         </div>
       </template>
@@ -299,16 +312,39 @@ function close() {
   gap: 16px;
   padding: 20px 0;
 }
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--primary-light);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+
+/* 동물 이미지 테두리 자리에 겹쳐지는 진행 링 (등급 색) */
+.progress-stage {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.progress-ring {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg); /* 12시 방향에서 시작 */
+}
+.progress-ring circle {
+  fill: none;
+  stroke-linecap: round;
+}
+.ring-track {
+  stroke: var(--g);
+  opacity: 0.2;
+  stroke-width: 8;
+}
+.ring-bar {
+  stroke: var(--g);
+  stroke-width: 8;
+  stroke-dasharray: 245; /* 2πr, r=39 */
+  stroke-dashoffset: 245;
+  animation: ringFill 0.9s linear forwards;
+}
+@keyframes ringFill {
+  to { stroke-dashoffset: 0; }
 }
 .result-emoji {
   font-size: 56px;
