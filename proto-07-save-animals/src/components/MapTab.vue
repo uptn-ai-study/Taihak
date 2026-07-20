@@ -161,6 +161,11 @@ onBeforeUnmount(() => {
     <!-- 위치 안내 (기본값 폴백 시) -->
     <div v-if="store.locationMessage" class="loc-banner">📍 {{ store.locationMessage }}</div>
 
+    <!-- 지형 조회 실패 — 오배치 방지를 위해 배치를 멈추고 재시도 (비차단, 자동 재시도 중) -->
+    <button v-if="store.terrainFailed && !store.locationLoading" class="terrain-retry" @click="store.retryTerrain()">
+      🗺️ 지형 정보를 불러오는 중이에요 · 다시 시도
+    </button>
+
     <!-- 지도 -->
     <div ref="mapEl" class="map-canvas"></div>
 
@@ -177,16 +182,8 @@ onBeforeUnmount(() => {
       <p class="t-body2">내 주변 위기 동물을 찾는 중…</p>
     </div>
 
-    <!-- 지형 조회 실패 — 서식지를 모르면 배치하지 않는다 -->
-    <div v-else-if="store.terrainFailed" class="map-error">
-      <div class="empty-icon">🗺️</div>
-      <p class="empty-text">지형 정보를 불러오지 못했어요</p>
-      <p class="empty-sub">동물을 알맞은 서식지에 배치할 수 없어 잠시 멈췄어요</p>
-      <button class="btn-gray retry-btn" @click="store.retryTerrain()">다시 시도</button>
-    </div>
-
-    <!-- 빈 상태 (모두 구조 완료) -->
-    <div v-else-if="store.visibleAnimals.length === 0" class="map-empty">
+    <!-- 빈 상태 (모두 구조 완료) — 지형 실패로 비어있는 경우는 제외 -->
+    <div v-else-if="!store.terrainFailed && store.visibleAnimals.length === 0" class="map-empty">
       <div class="empty-icon">🐾</div>
       <p class="empty-text">이 지역 동물을 모두 만났어요</p>
       <p class="empty-sub">30분마다 새로운 친구들이 나타나요</p>
@@ -300,11 +297,25 @@ onBeforeUnmount(() => {
   color: rgba(255, 255, 255, 0.92);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
-.retry-btn {
-  flex: none;
-  width: 140px;
-  margin-top: 6px;
-  pointer-events: auto;
+.terrain-retry {
+  position: absolute;
+  bottom: 20px;
+  left: 12px;
+  right: 82px;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-2);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #92400E;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+.terrain-retry:active {
+  background: var(--muted-bg);
 }
 .spinner {
   width: 36px;

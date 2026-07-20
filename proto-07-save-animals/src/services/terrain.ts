@@ -17,12 +17,16 @@ export type { WaterContext }
 
 export const EMPTY_WATER: WaterContext = { freshwater: [], sea: [], coastlines: [] }
 
+// 공용 Overpass 미러들 — 병렬로 쏴서 가장 먼저 응답하는 것을 쓴다 (일부가 죽어도 동작).
+// 브라우저에서 CORS 를 허용하는 미러만 포함 (osm.jp 등은 CORS 차단이라 제외).
 const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
 ]
 
-/** 엔드포인트 하나당 최대 대기 — 넘으면 다음 미러 */
+/** 엔드포인트 하나당 최대 대기 (미러는 병렬 조회) */
 const FETCH_TIMEOUT_MS = 6000
 
 /** 두 좌표 사이 거리 (m) — Haversine */
@@ -185,27 +189,33 @@ async function load(center: LatLng, minR: number, maxR: number): Promise<WaterCo
 );
 out geom 400;`
 
-  let lastError: unknown = null
-  for (const url of OVERPASS_ENDPOINTS) {
-    // Overpass 가 느릴 때 앱이 로딩에 갇히지 않도록 클라이언트 타임아웃
-    const abort = new AbortController()
-    const timer = setTimeout(() => abort.abort(), FETCH_TIMEOUT_MS)
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'data=' + encodeURIComponent(query),
-        signal: abort.signal,
-      })
-      if (!res.ok) throw new Error(`Overpass ${res.status}`)
-      return parse(await res.json(), center, minR, maxR)
-    } catch (e) {
-      lastError = e // 다음 미러로 재시도
-    } finally {
-      clearTimeout(timer)
-    }
+  // 미러들을 병렬로 쏘고 가장 먼저 성공하는 응답을 쓴다 (순차 대기 → 총 대기시간 절반).
+  const attempts = OVERPASS_ENDPOINTS.map((url) => fetchOne(url, query, center, minR, maxR))
+  return await Promise.any(attempts)
+}
+
+/** 단일 엔드포인트 조회 (클라이언트 타임아웃 포함) */
+async function fetchOne(
+  url: string,
+  query: string,
+  center: LatLng,
+  minR: number,
+  maxR: number,
+): Promise<WaterContext> {
+  const abort = new AbortController()
+  const timer = setTimeout(() => abort.abort(), FETCH_TIMEOUT_MS)
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'data=' + encodeURIComponent(query),
+      signal: abort.signal,
+    })
+    if (!res.ok) throw new Error(`Overpass ${res.status}`)
+    return parse(await res.json(), center, minR, maxR)
+  } finally {
+    clearTimeout(timer)
   }
-  throw lastError ?? new Error('Overpass 조회 실패')
 }
 
 function parse(data: any, center: LatLng, minR: number, maxR: number): WaterContext {

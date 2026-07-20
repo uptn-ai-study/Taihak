@@ -119,35 +119,43 @@ export const useGameStore = defineStore('game', {
      * 위치 이동 — 주변 지형(물)을 다시 조회하고 동물을 새로 스폰한다.
      * 테스트 위치 이동에도 사용.
      */
-    async setLocation(loc: LatLng, message: string | null = null) {
+    async setLocation(loc: LatLng, message: string | null = null, attempt = 0) {
       const req = ++this.locationReq
-      this.locationLoading = true
+      // 최초 조회만 로딩 스피너를 보인다. 자동 재시도는 조용히 (배너만 유지).
+      this.locationLoading = attempt === 0
       this.location = loc
       this.locationMessage = message
-      this.animals = []
+      if (attempt === 0) this.animals = []
 
-      // 지형(해안선)을 모르면 육지 동물이 바다에 배치되므로 반드시 먼저 기다린다.
-      // 캐시가 있으면 즉시 끝난다.
+      // 서식지별 배치는 지형(해안선) 데이터가 있어야 정확하다. 캐시가 있으면 즉시 끝난다.
       try {
         const water = await fetchWaterContext(loc, SPAWN.minRadiusM, SPAWN.maxRadiusM)
         if (this.locationReq !== req) return // 그 사이 위치가 또 바뀌었으면 버린다
         this.water = water
         this.terrainFailed = false
         this.refreshAnimals()
+        this.locationLoading = false
       } catch {
         if (this.locationReq !== req) return
-        // 지형을 모르는 채로 배치하면 바다 한가운데 동물이 나온다 → 배치하지 않는다
+        // 지형을 모르는 채로 배치하면 육지 동물이 바다에 뜬다 → 배치하지 않는다.
         this.water = EMPTY_WATER
         this.terrainFailed = true
         this.animals = []
-      } finally {
-        if (this.locationReq === req) this.locationLoading = false
+        this.locationLoading = false
+        // Overpass 일시 장애 대비 자동 재시도 (조용히, 로딩 표시 없이)
+        if (attempt < 3) {
+          window.setTimeout(() => {
+            if (this.locationReq === req && this.terrainFailed) {
+              this.setLocation(loc, message, attempt + 1)
+            }
+          }, 3000)
+        }
       }
     },
 
-    /** 지형 조회 실패 후 재시도 */
+    /** 지형 정보를 다시 조회 (사용자가 재시도 버튼을 누를 때 — 시도 횟수 리셋) */
     async retryTerrain() {
-      if (this.location) await this.setLocation(this.location, this.locationMessage)
+      if (this.location) await this.setLocation(this.location, this.locationMessage, 0)
     },
 
     /** window 재계산 + 스폰. window 가 바뀌면 처리기록 초기화 */
