@@ -5,7 +5,7 @@
 
 import type { AnimalSpecies, Grade, LatLng, SpawnedAnimal } from '../types'
 import { GRADE_LIST, SPAWN, SPECIES_BY_GRADE } from '../config/gameConfig'
-import { EMPTY_WATER, distanceM, type WaterContext } from './terrain'
+import { EMPTY_WATER, distanceM, isSeaPoint, type WaterContext } from './terrain'
 
 /** 현재 시각 → 30분 window 시드값 */
 export function getSpawnWindow(now: number = Date.now()): number {
@@ -51,18 +51,22 @@ function jitter(p: LatLng, rng: () => number): LatLng {
   return offsetLatLng(p, d, rng() * Math.PI * 2)
 }
 
-/** 육지 좌표 — 물에서 최소 40m 떨어지도록 몇 번 재시도 */
-function randomLandPoint(center: LatLng, rng: () => number, water: WaterContext): LatLng {
-  let point = center
-  for (let attempt = 0; attempt < 6; attempt++) {
+/**
+ * 육지 좌표 — 바다에 빠지지 않고 물가에서도 최소 40m 떨어지도록 재시도.
+ * 해안선 방향 규칙으로 바다 여부를 판별하므로 먼바다도 걸러진다.
+ */
+function randomLandPoint(center: LatLng, rng: () => number, water: WaterContext): LatLng | null {
+  const coastlines = water.coastlines ?? []
+  for (let attempt = 0; attempt < 20; attempt++) {
     const distance = SPAWN.minRadiusM + rng() * (SPAWN.maxRadiusM - SPAWN.minRadiusM)
-    point = offsetLatLng(center, distance, rng() * Math.PI * 2)
+    const point = offsetLatLng(center, distance, rng() * Math.PI * 2)
+    if (isSeaPoint(point, coastlines)) continue
     const nearWater = [...water.freshwater, ...water.sea].some(
       (w) => distanceM(point, w) < 40,
     )
     if (!nearWater) return point
   }
-  return point // 계속 물이면 마지막 좌표 사용 (희박)
+  return null // 주변이 온통 바다면 이 마리는 건너뛴다
 }
 
 /**
@@ -103,14 +107,18 @@ export function spawnAnimals(
     const species = pool[Math.floor(rng() * pool.length)]
 
     // 3) 서식지에 맞는 좌표에 배치
-    let position: LatLng
+    let position: LatLng | null
     if (species.habitat === 'freshwater') {
       position = jitter(water.freshwater[Math.floor(rng() * water.freshwater.length)], rng)
     } else if (species.habitat === 'sea') {
-      position = jitter(water.sea[Math.floor(rng() * water.sea.length)], rng)
+      // water.sea 는 이미 '바다'로 검증된 지점 — jitter 가 육지로 넘기면 원래 지점 사용
+      const base = water.sea[Math.floor(rng() * water.sea.length)]
+      const moved = jitter(base, rng)
+      position = isSeaPoint(moved, water.coastlines ?? []) ? moved : base
     } else {
       position = randomLandPoint(center, rng, water)
     }
+    if (!position) continue
 
     animals.push({
       id: `${window}-${i}`,

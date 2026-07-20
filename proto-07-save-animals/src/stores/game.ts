@@ -24,6 +24,12 @@ interface State {
   spawnWindow: number
   animals: SpawnedAnimal[]
   water: WaterContext                 // 주변 물(강·바다) 좌표 — 서식지별 배치에 사용
+  terrainFailed: boolean              // 지형 조회 실패 — 배치를 멈추고 재시도 안내
+  /**
+   * 위치 요청 일련번호. 늦게 도착한 응답을 버리는 데 쓴다.
+   * state 에 넣은 객체는 reactive proxy 가 되어 참조 비교(===)가 통하지 않으므로 숫자로 비교한다.
+   */
+  locationReq: number
   attendance: AttendanceInfo | null   // null 이면 출석 모달 미표시
 }
 
@@ -36,6 +42,8 @@ export const useGameStore = defineStore('game', {
     spawnWindow: getSpawnWindow(),
     animals: [],
     water: EMPTY_WATER,
+    terrainFailed: false,
+    locationReq: 0,
     attendance: null,
   }),
 
@@ -104,14 +112,42 @@ export const useGameStore = defineStore('game', {
     async initLocation() {
       this.locationLoading = true
       const result = await getCurrentLocation()
-      this.location = result.location
-      this.locationMessage = result.message
+      await this.setLocation(result.location, result.message)
+    },
 
-      // 서식지별 배치를 위해 주변 강·바다 좌표를 먼저 확보 (실패해도 육지 동물은 출현)
-      this.water = await fetchWaterContext(this.location, SPAWN.minRadiusM, SPAWN.maxRadiusM)
+    /**
+     * 위치 이동 — 주변 지형(물)을 다시 조회하고 동물을 새로 스폰한다.
+     * 테스트 위치 이동에도 사용.
+     */
+    async setLocation(loc: LatLng, message: string | null = null) {
+      const req = ++this.locationReq
+      this.locationLoading = true
+      this.location = loc
+      this.locationMessage = message
+      this.animals = []
 
-      this.refreshAnimals()
-      this.locationLoading = false
+      // 지형(해안선)을 모르면 육지 동물이 바다에 배치되므로 반드시 먼저 기다린다.
+      // 캐시가 있으면 즉시 끝난다.
+      try {
+        const water = await fetchWaterContext(loc, SPAWN.minRadiusM, SPAWN.maxRadiusM)
+        if (this.locationReq !== req) return // 그 사이 위치가 또 바뀌었으면 버린다
+        this.water = water
+        this.terrainFailed = false
+        this.refreshAnimals()
+      } catch {
+        if (this.locationReq !== req) return
+        // 지형을 모르는 채로 배치하면 바다 한가운데 동물이 나온다 → 배치하지 않는다
+        this.water = EMPTY_WATER
+        this.terrainFailed = true
+        this.animals = []
+      } finally {
+        if (this.locationReq === req) this.locationLoading = false
+      }
+    },
+
+    /** 지형 조회 실패 후 재시도 */
+    async retryTerrain() {
+      if (this.location) await this.setLocation(this.location, this.locationMessage)
     },
 
     /** window 재계산 + 스폰. window 가 바뀌면 처리기록 초기화 */

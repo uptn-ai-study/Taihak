@@ -138,6 +138,25 @@ export const DEFAULT_LOCATION = {
   name: '서울 시청',
 }
 
+// ── 테스트 위치 (서식지별 출현 차이 확인용) ──────────────────
+export interface TestLocation {
+  id: string
+  name: string
+  desc: string   // 어떤 지형인지
+  emoji: string
+  lat: number
+  lng: number
+}
+
+export const TEST_LOCATIONS: TestLocation[] = [
+  { id: 'cityhall', name: '서울 시청',     desc: '도심 · 청계천',   emoji: '🏙️', lat: 37.5665, lng: 126.9780 },
+  { id: 'hangang',  name: '여의도 한강공원', desc: '큰 강 주변',      emoji: '🌊', lat: 37.5285, lng: 126.9326 },
+  { id: 'haeundae', name: '해운대 해수욕장', desc: '바다 · 해안선',   emoji: '🏖️', lat: 35.1587, lng: 129.1604 },
+  { id: 'seorak',   name: '설악산',        desc: '산 · 육지 위주',   emoji: '⛰️', lat: 38.1670, lng: 128.4667 },
+  { id: 'suncheon', name: '순천만 습지',    desc: '습지 · 갯벌',     emoji: '🪷', lat: 34.8853, lng: 127.5086 },
+  { id: 'seongsan', name: '성산일출봉',     desc: '제주 · 바다',     emoji: '🌅', lat: 33.4580, lng: 126.9425 },
+]
+
 // ── 메달샵 상품 (UI 목업) ────────────────────────────────────
 export interface ShopItem {
   id: string

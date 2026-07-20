@@ -5,7 +5,8 @@
 import type { UserProgress, WaterContext } from '../types'
 
 const STORAGE_KEY = 'save-animals::progress'
-const WATER_KEY_PREFIX = 'save-animals::water::'
+// v4 — 바다 좌표를 해안선 근처만이 아니라 반경 내 바다 전역(격자)으로 확장, 이전 캐시 무효화
+const WATER_KEY_PREFIX = 'save-animals::water::v4::'
 /** 물 지형은 자주 바뀌지 않으므로 길게 캐시 (Overpass 요청 최소화) */
 const WATER_TTL_MS = 7 * 24 * 60 * 60 * 1000
 

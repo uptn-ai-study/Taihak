@@ -4,9 +4,11 @@ import { useGameStore } from '../stores/game'
 import { loadKakaoMaps } from '../services/kakaoMap'
 import { markerHtml } from '../services/animalGraphic'
 import type { SpawnedAnimal } from '../types'
+import LocationPicker from './LocationPicker.vue'
 
 const emit = defineEmits<{ select: [animal: SpawnedAnimal] }>()
 const store = useGameStore()
+const showPicker = ref(false)
 
 // 카카오 SDK 는 런타임 주입이라 타입 없이 any 로 취급
 const mapEl = ref<HTMLElement | null>(null)
@@ -16,7 +18,9 @@ let map: any = null
 let userOverlay: any = null
 const animalOverlays = new Map<string, any>()
 
-const MAP_LEVEL = 6 // 카카오 확대 레벨 (숫자↑ = 더 넓게, 반경 3km 커버)
+// 카카오 확대 레벨 (숫자↑ = 더 넓게). 스폰 반경 3km(지름 6km) 전체가
+// 세로 화면 가로폭 안에 들어오도록 7 로 설정 — 낮으면 동·서 끝 동물이 잘려 안 보인다.
+const MAP_LEVEL = 7
 
 async function initMap() {
   if (!store.location || !mapEl.value || map) return
@@ -52,12 +56,17 @@ async function initMap() {
   renderAnimals()
 }
 
+/** 마커 키 — id 는 window 기준이라 위치를 옮기면 재사용된다. 좌표까지 포함해야 갱신된다 */
+function overlayKey(a: SpawnedAnimal): string {
+  return `${a.id}@${a.lat.toFixed(5)},${a.lng.toFixed(5)}`
+}
+
 function renderAnimals() {
   if (!map || !kakao) return
   const visible = store.visibleAnimals
-  const visibleIds = new Set(visible.map((a) => a.id))
+  const visibleIds = new Set(visible.map(overlayKey))
 
-  // 제거된(구조 처리된) 마커 삭제
+  // 제거된(구조 처리됐거나 위치가 바뀐) 마커 삭제
   for (const [id, overlay] of animalOverlays) {
     if (!visibleIds.has(id)) {
       overlay.setMap(null)
@@ -67,7 +76,7 @@ function renderAnimals() {
 
   // 신규 마커 추가
   for (const animal of visible) {
-    if (animalOverlays.has(animal.id)) continue
+    if (animalOverlays.has(overlayKey(animal))) continue
     const el = document.createElement('div')
     el.className = 'animal-marker-wrap'
     el.style.cursor = 'pointer'
@@ -83,7 +92,7 @@ function renderAnimals() {
       clickable: true,
     })
     overlay.setMap(map)
-    animalOverlays.set(animal.id, overlay)
+    animalOverlays.set(overlayKey(animal), overlay)
   }
 }
 
@@ -94,12 +103,22 @@ function recenter() {
   }
 }
 
-// 위치 준비되면 지도 초기화
+// 위치 준비/변경 처리 — 최초엔 초기화, 이후엔 지도 이동 + 마커 재배치
 watch(
   () => store.location,
-  async () => {
+  async (loc) => {
     await nextTick()
-    initMap()
+    if (!map) {
+      initMap()
+      return
+    }
+    if (!loc || !kakao) return
+
+    // 지도와 내 위치 마커를 새 위치로 이동 (동물 마커는 스폰 후 watch 가 갱신)
+    const center = new kakao.maps.LatLng(loc.lat, loc.lng)
+    userOverlay?.setPosition(center)
+    map.setLevel(MAP_LEVEL)
+    map.setCenter(center)
   },
 )
 
@@ -158,6 +177,14 @@ onBeforeUnmount(() => {
       <p class="t-body2">내 주변 위기 동물을 찾는 중…</p>
     </div>
 
+    <!-- 지형 조회 실패 — 서식지를 모르면 배치하지 않는다 -->
+    <div v-else-if="store.terrainFailed" class="map-error">
+      <div class="empty-icon">🗺️</div>
+      <p class="empty-text">지형 정보를 불러오지 못했어요</p>
+      <p class="empty-sub">동물을 알맞은 서식지에 배치할 수 없어 잠시 멈췄어요</p>
+      <button class="btn-gray retry-btn" @click="store.retryTerrain()">다시 시도</button>
+    </div>
+
     <!-- 빈 상태 (모두 구조 완료) -->
     <div v-else-if="store.visibleAnimals.length === 0" class="map-empty">
       <div class="empty-icon">🐾</div>
@@ -165,9 +192,14 @@ onBeforeUnmount(() => {
       <p class="empty-sub">30분마다 새로운 친구들이 나타나요</p>
     </div>
 
+    <!-- 테스트 위치 이동 -->
+    <button class="fab locpick" @click="showPicker = true" aria-label="테스트 위치 이동">🧭</button>
+
     <!-- 내 위치 버튼 -->
     <button class="fab recenter" @click="recenter" aria-label="내 위치">📍</button>
   </div>
+
+  <LocationPicker v-if="showPicker" @close="showPicker = false" />
 </template>
 
 <style scoped>
@@ -268,6 +300,12 @@ onBeforeUnmount(() => {
   color: rgba(255, 255, 255, 0.92);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
+.retry-btn {
+  flex: none;
+  width: 140px;
+  margin-top: 6px;
+  pointer-events: auto;
+}
 .spinner {
   width: 36px;
   height: 36px;
@@ -286,5 +324,16 @@ onBeforeUnmount(() => {
   z-index: 20;
   font-size: 20px;
   color: #fff;
+}
+.locpick {
+  position: absolute;
+  right: 16px;
+  bottom: 82px;
+  z-index: 20;
+  font-size: 20px;
+  background: var(--primary);
+}
+.locpick:active {
+  background: var(--primary-dark);
 }
 </style>

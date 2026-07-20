@@ -70,8 +70,13 @@ export interface LatLng {
 
 /** 주변 물 좌표 — 서식지별 동물 배치에 사용 */
 export interface WaterContext {
-  freshwater: LatLng[] // 강·호수 위의 좌표
-  sea: LatLng[]        // 바다(해안선) 좌표
+  freshwater: LatLng[]    // 강·호수 위의 좌표
+  sea: LatLng[]           // 바다(해안선) 좌표 — 바다 동물 배치용
+  /**
+   * 해안선 (방향이 있는 선). OSM 규칙상 way 진행방향 기준 왼쪽=육지, 오른쪽=바다.
+   * 어떤 좌표가 바다인지 판별하는 데 사용.
+   */
+  coastlines: LatLng[][]
 }
 
 /** 구조 판정 결과 */
